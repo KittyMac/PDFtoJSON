@@ -8,10 +8,12 @@ private func testdata(path: String) -> String {
 
 final class PDFtoJSONTests: XCTestCase {
     
-    func testImage0() {
-        //let pdf = Hitch(contentsOfFile: testdata(path: "Data/pdfs/test0.pdf"))!
+    func testPDF0() {
+        let pdf = Hitch(contentsOfFile: testdata(path: "Data/pdfs/test0.pdf"))!
         
-        //guard let pdfJson = PDFtoJSON.parse(file: testdata(path: "Data/pdfs/test1.pdf")) else { XCTFail(); return }
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            print(root)
+        }
         
         //let result = PDFtoJSON.parse(image: image.dataNoCopy())
         //XCTAssertEqual(result, "1234567890\n")

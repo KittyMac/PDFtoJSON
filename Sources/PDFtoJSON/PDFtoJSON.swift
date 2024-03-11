@@ -1,30 +1,38 @@
 import Foundation
+import Spanker
 import Hitch
 
-public class PDFtoJSON {
-    
-    /*
-    public static func parse(file: String) -> Hitch? {
-        if let jsonUTF8 = pdfToJson1(file) {
-            return Hitch(own: jsonUTF8)
+public enum PDFtoJSON {
+
+    @inlinable
+    public static func parsed<T>(hitch: Hitch, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(hitch: hitch, callback)
+    }
+
+    @inlinable
+    public static func parsed<T>(halfhitch: HalfHitch, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(halfhitch: halfhitch, callback)
+    }
+
+    @inlinable
+    public static func parsed<T>(data: Data, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(data: data, callback)
+    }
+
+    @inlinable
+    public static func parsed<T>(string: String, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(string: string, callback)
+    }
+
+    @inlinable
+    public static func parse(halfhitch: HalfHitch) -> JsonElement? {
+        let (error, result) = Reader.parse(halfhitch: halfhitch)
+        #if DEBUG
+        if let error = error {
+            print(error)
         }
-        return nil
+        #endif
+        return result
     }
-    
-    public static func parse(_ hitch: Hitch) -> Hitch? {
-        return parse(hitch.halfhitch())
-    }
-    
-    public static func parse(_ halfhitch: HalfHitch) -> Hitch? {
-        if let jsonUTF8 = pdfToJson2(halfhitch.raw(),
-                                     halfhitch.count) {
-            return Hitch(own: jsonUTF8)
-        }
-        return nil
-    }
-    
-    public init() {
-        
-    }
-    */
+
 }
