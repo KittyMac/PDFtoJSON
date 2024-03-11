@@ -1,0 +1,50 @@
+FROM swift:5.7.1-focal as builder
+
+RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && apt-get -q update && \
+    apt-get install -y \
+    software-properties-common \
+    libpq-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libjavascriptcoregtk-4.0-dev \
+    libatomic1
+    
+RUN add-apt-repository ppa:alex-p/tesseract-ocr5 && \
+    apt-get install -y \
+    libtesseract-dev \
+    libleptonica-dev
+
+RUN rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root/PDFtoJSON
+COPY ./.build/repositories ./.build/repositories
+COPY ./.git ./.git
+COPY ./Makefile ./Makefile
+COPY ./Package.resolved ./Package.resolved
+COPY ./Package.swift ./Package.swift
+COPY ./Sources ./Sources
+COPY ./Tests ./Tests
+
+RUN swift package resolve
+RUN swift build --configuration release
+RUN swift test -v
+
+FROM swift:5.7.1-focal-slim
+
+RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && apt-get -q update && \
+    apt-get -q install -y \
+    software-properties-common \
+    libpq-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libjavascriptcoregtk-4.0-dev \
+    libatomic1 \
+    plzip
+    
+RUN add-apt-repository ppa:alex-p/tesseract-ocr5 && \
+    apt-get install -y \
+    libtesseract5
+
+RUN rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /root/PDFtoJSON/.build/debug/PDFtoJSON.build/PDFtoJSON.swift.o .
