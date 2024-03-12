@@ -21,6 +21,31 @@ import Hitch
 // indirect object reference
 // 12 0 R
 
+@usableFromInline
+func peekParts(n: Int,
+               _ start: UnsafePointer<UInt8>,
+               _ end: UnsafePointer<UInt8>) -> [HalfHitch] {
+    var parts: [HalfHitch] = []
+    var ptr = start
+    
+    // advance until we've encountered n whitespaces
+    var partStart = ptr
+    while parts.count < n {
+        if ptr[0].isWhitspace() {
+            if ptr - partStart > 0 {
+                parts.append(HalfHitch(sourceObject: nil,
+                                       raw: partStart,
+                                       count: ptr - partStart,
+                                       from: 0,
+                                       to: ptr - partStart))
+            }
+            partStart = ptr + 1
+        }
+        ptr += 1
+    }
+    return parts
+}
+
 @inlinable
 func getObject(_ ptr: inout UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
@@ -104,8 +129,32 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
             fatalError("TO BE IMPLEMENTED")
         }
         
-        // int, double, indirect obj definition, indirect obj reference
-        fatalError("TO BE IMPLEMENTED")
+        
+        let nextParts = peekParts(n: 3, ptr, end)
+        
+        // obj definition
+        if nextParts[2] == "obj" {
+            fatalError("TO BE IMPLEMENTED")
+        }
+        
+        // obj reference
+        if nextParts[2] == "R" {
+            fatalError("TO BE IMPLEMENTED")
+        }
+        
+        // double
+        if nextParts[0].contains(.dot),
+           let value = nextParts[0].toDouble(fuzzy: true) {
+            ptr += nextParts[0].count
+            return JsonElement(unknown: value)
+        }
+        
+        // int
+        if let value = nextParts[0].toInt(fuzzy: true) {
+            ptr += nextParts[0].count
+            return JsonElement(unknown: value)
+        }
+        
     }
     
     

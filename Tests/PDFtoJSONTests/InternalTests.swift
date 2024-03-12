@@ -64,6 +64,35 @@ final class InternalTests: XCTestCase {
         XCTAssertEqual(getObject(&ptr, end)?.stringValue, "AB@")
     }
     
+    // MARK: - Numbers
+    func testParseInteger0() {
+        let pdf: Hitch = "42"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.intValue, 42)
+    }
+    
+    func testParseInteger1() {
+        let pdf: Hitch = "[ 123 43445 +17 -98 0 ]"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"[123,43445,17,-98,0]"#)
+    }
+    
+    func testParseDouble0() {
+        let pdf: Hitch = "42.42"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.doubleValue, 42.42)
+    }
+    
+    func testParseDouble1() {
+        let pdf: Hitch = "[ 34.5 -3.62 +123.6 4. -.002 0.0 ]"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"[34.5,-3.62,123.6,4.0,-0.002,0.0]"#)
+    }
+    
     // MARK: - Arrays
     func testParseArray0() {
         let pdf: Hitch = "[ (hello) <776f726c64> <776f726c64> (hello) false true null ]"
