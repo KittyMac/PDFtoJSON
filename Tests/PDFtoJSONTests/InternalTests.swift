@@ -63,6 +63,14 @@ final class InternalTests: XCTestCase {
         let end = ptr + pdf.count
         XCTAssertEqual(getObject(&ptr, end)?.stringValue, "AB@")
     }
+    
+    // MARK: - Arrays
+    func testParseArray0() {
+        let pdf: Hitch = "[ (hello) <776f726c64> <776f726c64> (hello) false true null ]"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"["hello","world","world","hello",false,true,null]"#)
+    }
         
     // MARK: - Misc
     func testParseNull0() {

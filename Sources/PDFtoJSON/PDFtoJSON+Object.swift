@@ -21,9 +21,11 @@ import Hitch
 // indirect object reference
 // 12 0 R
 
+@inlinable
 func getObject(_ ptr: inout UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     while ptr < end {
+        guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
         
         // Comment
         if ptr[0] == .percentSign {
@@ -42,7 +44,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if ptr + 1 <= end,
            ptr[0] == .lessThan,
            ptr[1] == .lessThan {
-            
+            fatalError("TO BE IMPLEMENTED")
         }
         
         // Hexstring
@@ -51,13 +53,13 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         }
         
         // Array
-        if ptr[0] == .openBracket {
-            
+        if ptr[0] == .openBrace {
+            return getArray(&ptr, end)
         }
         
         // Name / Value pairing
         if ptr[0] == .forwardSlash {
-            
+            fatalError("TO BE IMPLEMENTED")
         }
         
         // null
@@ -66,6 +68,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
            ptr[1] == .u,
            ptr[2] == .l,
            ptr[3] == .l {
+            ptr += 4
             return JsonElement.null()
         }
         
@@ -75,6 +78,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
            ptr[1] == .r,
            ptr[2] == .u,
            ptr[3] == .e {
+            ptr += 4
             return JsonElement(unknown: true)
         }
         
@@ -85,6 +89,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
            ptr[2] == .l,
            ptr[3] == .s,
            ptr[4] == .e {
+            ptr += 5
             return JsonElement(unknown: false)
         }
         
@@ -96,7 +101,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
            ptr[3] == .e,
            ptr[4] == .a,
            ptr[5] == .m {
-            return JsonElement(unknown: false)
+            fatalError("TO BE IMPLEMENTED")
         }
         
         // int, double, indirect obj definition, indirect obj reference

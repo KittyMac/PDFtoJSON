@@ -15,6 +15,16 @@ public extension UInt8 {
         }
         return 0
     }
+    
+    @inlinable
+    func isWhitspace() -> Bool {
+        switch self {
+        case .space, .newLine, .carriageReturn, .tab:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 @inlinable
@@ -44,5 +54,6 @@ func getHexstring(_ ptr: inout UnsafePointer<UInt8>,
         ptr2 += 2
     }
     
+    ptr += 1
     return JsonElement(unknown: string)
 }

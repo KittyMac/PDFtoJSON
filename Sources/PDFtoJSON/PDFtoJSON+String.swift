@@ -69,5 +69,6 @@ func getString(_ ptr: inout UnsafePointer<UInt8>,
         }
     }
     
+    ptr += 1
     return JsonElement(unknown: string)
 }
