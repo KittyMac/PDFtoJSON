@@ -82,7 +82,27 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if ptr + 1 <= end,
            ptr[0] == .lessThan,
            ptr[1] == .lessThan {
-            return getDictionary(&ptr, end)
+            guard let dictionary = getDictionary(&ptr, end) else { return nil }
+            
+            // a dictionary can be followed by a steam object; the dictionary
+            // is necessary to parse the stream. Therefor we need to skip
+            // all whitespace to see if the next token is a stream.
+            while ptr < end && ptr[0].isWhitspace() {
+                ptr += 1
+            }
+            
+            // stream
+            if ptr + 6 <= end,
+               ptr[0] == .s,
+               ptr[1] == .t,
+               ptr[2] == .r,
+               ptr[3] == .e,
+               ptr[4] == .a,
+               ptr[5] == .m {
+                return getStream(info: dictionary, &ptr, end)
+            }
+            
+            return dictionary
         }
         
         // Hexstring
@@ -131,18 +151,6 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
             return JsonElement(unknown: false)
         }
         
-        // stream
-        if ptr + 6 <= end,
-           ptr[0] == .s,
-           ptr[1] == .t,
-           ptr[2] == .r,
-           ptr[3] == .e,
-           ptr[4] == .a,
-           ptr[5] == .m {
-            fatalError("TO BE IMPLEMENTED")
-        }
-        
-        
         let nextParts = peekParts(n: 3, ptr, end)
         
         // obj definition
@@ -167,12 +175,18 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if nextParts[0].contains(.dot),
            let value = nextParts[0].toDouble(fuzzy: true) {
             ptr += nextParts[0].count
+            if nextParts[0].last == .closeBrace {
+                ptr -= 1
+            }
             return JsonElement(unknown: value)
         }
         
         // int
         if let value = nextParts[0].toInt(fuzzy: true) {
             ptr += nextParts[0].count
+            if nextParts[0].last == .closeBrace {
+                ptr -= 1
+            }
             return JsonElement(unknown: value)
         }
         

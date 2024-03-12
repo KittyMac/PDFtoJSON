@@ -5,19 +5,28 @@ import Hitch
 @inlinable
 func getXrefTable(_ ptr: inout UnsafePointer<UInt8>,
                   _ end: UnsafePointer<UInt8>,
-                  _ result: JsonElement) -> String? {
+                  _ document: JsonElement) -> String? {
     let xref = JsonElement(unknown: ^[])
     
+    var index = 0
     while ptr < end {
         guard let line = getLine(&ptr, end)?.trimmed() else { return "failed to read xref line" }
         if line == "trailer" {
             guard let trailerDict = getDictionary(&ptr, end) else { return "failed to parse trailer dictionary" }
-            result.set(key: "trailer", value: trailerDict)
+            document.set(key: "trailer", value: trailerDict)
             break
+        }
+        
+        if line == "xref" {
+            continue
         }
         
         if line.last == .f {
             // 0000000000 65535 f
+            guard let _ = line.substring(0, 10)?.toInt() else { return "malformed xref line: \(line)" }
+            guard let _ = line.substring(11, 16)?.toInt() else { return "malformed xref line: \(line)" }
+
+            index += 1
         }
         
         if line.last == .n {
@@ -26,12 +35,15 @@ func getXrefTable(_ ptr: inout UnsafePointer<UInt8>,
             guard let generation = line.substring(11, 16)?.toInt() else { return "malformed xref line: \(line)" }
             
             xref.append(value: ^[
+                "index": index,
                 "offset": offset,
                 "generation": generation
             ])
+            
+            index += 1
         }
     }
     
-    result.set(key: "xref", value: xref)
+    document.set(key: "xref", value: xref)
     return nil
 }

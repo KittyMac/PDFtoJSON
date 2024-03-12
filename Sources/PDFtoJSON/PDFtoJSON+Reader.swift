@@ -56,9 +56,11 @@ extension PDFtoJSON {
             var currentIdx = 0
             var char: UInt8 = 0
             
-            let result = JsonElement(unknown: ^[
-                "parseDate": Date.timeIntervalBetween1970AndReferenceDate
+            let document = JsonElement(unknown: ^[
+                "__parse_date": Int(Date().timeIntervalSince1970)
             ])
+            
+            let documentObjects = JsonElement(unknown: [:])
             
             guard let start = pdf.raw() else { return ("unable to get raw bytes", nil) }
             let end = start + pdf.count
@@ -76,9 +78,9 @@ extension PDFtoJSON {
                 return ("malformed pdf header", nil)
             }
             
-            result.set(key: "version", value: header.substring(5, header.count))
+            document.set(key: "version", value: header.substring(5, header.count))
             
-            // Find startxref - next line is byte offset to the xref table
+            // Extract the xref table
             guard let startxrefIdx = pdf.lastIndex(of: "startxref") else { return ("unable to find startxref", nil) }
             
             ptr = start + startxrefIdx + 10
@@ -87,7 +89,26 @@ extension PDFtoJSON {
             guard let xrefIdx = startxrefLine.toInt() else { return ("unable to get xref offset", nil) }
 
             ptr = start + xrefIdx
-            if let error = getXrefTable(&ptr, end, result) { return (error, nil) }
+            if let error = getXrefTable(&ptr, end, document) { return (error, nil) }
+            
+            // preload all xref objects
+            guard let xref = document[element: "xref"] else { return ("xref is missing", nil) }
+            for xrefValue in xref.iterValues {
+                guard let offset = xrefValue[int: "offset"] else { return ("missing xref offset", nil) }
+                guard let index = xrefValue[int: "index"] else { return ("missing xref index", nil) }
+                
+                var objectPtr = start + offset
+                guard let object = getObject(&objectPtr, end) else { return ("failed to load xref object \(index)", nil) }
+                
+                documentObjects.set(key: "{0}" << [index], value: object)
+            }
+            
+            document.set(key: "objects", value: documentObjects)
+            
+            // Now that we have the xref table, parse needed info
+            // from the trailer (encryption keys and such)
+            //guard let trailer = document[element: "trailer"] else { return ("trailer is missing", nil) }
+            //guard let documentInfoRef = trailer[element: "Info"] else { return ("trailer Info missing", nil) }
             
             
             
@@ -100,7 +121,7 @@ extension PDFtoJSON {
             
             
             
-            return (nil, result)
+            return (nil, document)
         }
     }
     

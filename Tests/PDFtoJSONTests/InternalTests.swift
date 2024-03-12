@@ -128,6 +128,18 @@ final class InternalTests: XCTestCase {
         XCTAssertEqual(getObject(&ptr, end)?.description, #"{"Title":"untitled 2","Producer":"macOS Version 13.6.1 (Build 22G313) Quartz PDFContext","Author":"Rocco Bowling","Creator":"TextMate","CreationDate":"D:20240301135834Z00'00'","ModDate":"D:20240301135834Z00'00'"}"#)
     }
     
+    func testParseDictionary2() {
+        let pdf: Hitch = #"""
+        1 0 obj
+        << /Type /Page /Parent 2 0 R /Resources 4 0 R /Contents 3 0 R /MediaBox [0 0 612 792]
+        >>
+        endobj
+        """#
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"{"id":1,"generation":0,"value":{"Type":"Page","Parent":{"id":2,"generation":0},"Resources":{"id":4,"generation":0},"Contents":{"id":3,"generation":0},"MediaBox":[0,0,612,792]}}"#)
+    }
+        
     // MARK: - Object Definitions
     func testParseObjectDefinition0() {
         let pdf: Hitch = """
