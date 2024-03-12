@@ -55,5 +55,5 @@ func getHexstring(_ ptr: inout UnsafePointer<UInt8>,
     }
     
     ptr += 1
-    return JsonElement(unknown: string)
+    return JsonElement(unknown: string.base64Encoded())
 }

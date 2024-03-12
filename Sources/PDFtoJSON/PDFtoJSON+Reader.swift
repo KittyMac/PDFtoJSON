@@ -15,6 +15,7 @@ func getLine(_ ptr: inout UnsafePointer<UInt8>,
     
     guard ptr > start else { return nil }
     
+    ptr += 1
     return HalfHitch(sourceObject: nil, raw: start, count: ptr - start, from: 0, to: ptr - start)
 }
 

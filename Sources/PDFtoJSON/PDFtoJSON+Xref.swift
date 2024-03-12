@@ -11,6 +11,8 @@ func getXrefTable(_ ptr: inout UnsafePointer<UInt8>,
     while ptr < end {
         guard let line = getLine(&ptr, end)?.trimmed() else { return "failed to read xref line" }
         if line == "trailer" {
+            guard let trailerDict = getDictionary(&ptr, end) else { return "failed to parse trailer dictionary" }
+            result.set(key: "trailer", value: trailerDict)
             break
         }
         

@@ -12,7 +12,7 @@ final class ExternalTests: XCTestCase {
         let pdf = Hitch(contentsOfFile: testdata(path: "Data/pdfs/test0.pdf"))!
         
         PDFtoJSON.parsed(hitch: pdf) { root in
-            print(root)
+            print(root!.toHitch())
         }
         
         //let result = PDFtoJSON.parse(image: image.dataNoCopy())
