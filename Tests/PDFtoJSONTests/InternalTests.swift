@@ -6,6 +6,7 @@ import Spanker
 
 final class InternalTests: XCTestCase {
     
+    // MARK: - Strings
     func testParseString0() {
         let pdf: Hitch = "(This is a string)"
         guard var ptr = pdf.raw() else { XCTFail(); return }
@@ -48,6 +49,22 @@ final class InternalTests: XCTestCase {
         XCTAssertEqual(getObject(&ptr, end)?.stringValue, "")
     }
     
+    // MARK: - Hexstrings
+    func testParseHexstring0() {
+        let pdf: Hitch = "<4E6F762073686D6F7A206B6120706F702E>"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.stringValue, "Nov shmoz ka pop.")
+    }
+    
+    func testParseHexstringMissingLastChar() {
+        let pdf: Hitch = "<41424>"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.stringValue, "AB@")
+    }
+        
+    // MARK: - Misc
     func testParseNull0() {
         let pdf: Hitch = "null"
         guard var ptr = pdf.raw() else { XCTFail(); return }

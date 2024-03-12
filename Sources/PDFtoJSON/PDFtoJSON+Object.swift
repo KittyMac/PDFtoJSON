@@ -47,7 +47,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         
         // Hexstring
         if ptr[0] == .lessThan {
-            
+            return getHexstring(&ptr, end)
         }
         
         // Array
