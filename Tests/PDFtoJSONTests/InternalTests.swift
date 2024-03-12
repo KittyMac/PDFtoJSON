@@ -69,4 +69,11 @@ final class InternalTests: XCTestCase {
         XCTAssertEqual(getObject(&ptr, end)?.boolValue, false)
     }
     
+    func testParseComment() {
+        let pdf: Hitch = "% this is a comment"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end), nil)
+    }
+    
 }

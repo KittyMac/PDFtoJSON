@@ -25,6 +25,14 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     while ptr < end {
         
+        // Comment
+        if ptr[0] == .percentSign {
+            while ptr < end && ptr[0] != .newLine {
+                ptr += 1
+            }
+            return nil
+        }
+        
         // String
         if ptr[0] == .parenOpen {
             return getString(&ptr, end)
@@ -49,11 +57,6 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         
         // Name / Value pairing
         if ptr[0] == .forwardSlash {
-            
-        }
-        
-        // Comment
-        if ptr[0] == .percentSign {
             
         }
         
