@@ -2,28 +2,23 @@ import Foundation
 import Spanker
 import Hitch
 
-// TODO: move to hitch
-public extension UInt8 {
+extension HalfHitch {
     @inlinable
-    func htod() -> UInt8 {
-        if self >= .zero && self <= .nine {
-            return self - .zero
-        } else if self >= .a && self <= .z {
-            return self - .a + 10
-        } else if self >= .A && self <= .Z {
-            return self - .A + 10
-        }
-        return 0
-    }
-    
-    @inlinable
-    func isWhitspace() -> Bool {
-        switch self {
-        case .space, .newLine, .carriageReturn, .tab:
-            return true
-        default:
+    func isPrintable() -> Bool {
+        for i in self where i == 0 || i > 127 {
             return false
         }
+        return true
+    }
+}
+
+extension Hitch {
+    @inlinable
+    func isPrintable() -> Bool {
+        for i in self where i == 0 || i > 127 {
+            return false
+        }
+        return true
     }
 }
 
@@ -55,5 +50,10 @@ func getHexstring(_ ptr: inout UnsafePointer<UInt8>,
     }
     
     ptr += 1
+    
+    if string.isPrintable() {
+        return JsonElement(unknown: string)
+    }
+    
     return JsonElement(unknown: string.base64Encoded())
 }

@@ -62,14 +62,14 @@ final class InternalTests: XCTestCase {
         let pdf: Hitch = "<4E6F762073686D6F7A206B6120706F702E>"
         guard var ptr = pdf.raw() else { XCTFail(); return }
         let end = ptr + pdf.count
-        XCTAssertEqual(getObject(&ptr, end)?.stringValue, "Tm92IHNobW96IGthIHBvcC4=")
+        XCTAssertEqual(getObject(&ptr, end)?.stringValue, "Nov shmoz ka pop.")
     }
     
     func testParseHexstringMissingLastChar() {
         let pdf: Hitch = "<41424>"
         guard var ptr = pdf.raw() else { XCTFail(); return }
         let end = ptr + pdf.count
-        XCTAssertEqual(getObject(&ptr, end)?.stringValue, "QUJA")
+        XCTAssertEqual(getObject(&ptr, end)?.stringValue, "AB@")
     }
     
     // MARK: - Numbers
@@ -106,7 +106,7 @@ final class InternalTests: XCTestCase {
         let pdf: Hitch = "[ (hello) <776f726c64> /SomeKey false true null 1 2.0 null ]"
         guard var ptr = pdf.raw() else { XCTFail(); return }
         let end = ptr + pdf.count
-        XCTAssertEqual(getObject(&ptr, end)?.description, #"["hello","d29ybGQ=","SomeKey",false,true,null,1,2.0,null]"#)
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"["hello","world","SomeKey",false,true,null,1,2.0,null]"#)
     }
     
     // MARK: - Dictionaries

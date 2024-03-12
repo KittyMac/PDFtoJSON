@@ -1,6 +1,7 @@
 import Foundation
 import Spanker
 import Hitch
+import SWCompression
 
 @inlinable
 func getStream(info: JsonElement,
@@ -25,15 +26,26 @@ func getStream(info: JsonElement,
     
     guard let length = info[int: "Length"] else { return nil }
     
-    let streamContent = HalfHitch(sourceObject: nil,
+    var streamContent = HalfHitch(sourceObject: nil,
                                   raw: ptr,
                                   count: length,
                                   from: 0,
                                   to: length)
-    
-    info.set(key: "__content", value: streamContent.base64Encoded())
-    
+        
     // TODO: decrypt / deflate the content
+    if let filter = info[halfhitch: "Filter"] {
+        if filter == "FlateDecode" {
+            if let decompressed = try? ZlibArchive.unarchive(archive: streamContent.dataNoCopy()) {
+                streamContent = HalfHitch(data: decompressed)
+            }
+        }
+    }
+    
+    if streamContent.isPrintable() {
+        info.set(key: "__content", value: streamContent)
+    } else {
+        info.set(key: "__content", value: streamContent.base64Encoded())
+    }
     
     ptr += length
     
