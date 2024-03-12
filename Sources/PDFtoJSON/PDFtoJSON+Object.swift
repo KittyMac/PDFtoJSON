@@ -30,7 +30,7 @@ func peekParts(n: Int,
     
     // advance until we've encountered n whitespaces
     var partStart = ptr
-    while parts.count < n {
+    while ptr < end && parts.count < n {
         if ptr[0].isWhitspace() {
             if ptr - partStart > 0 {
                 parts.append(HalfHitch(sourceObject: nil,
@@ -43,6 +43,19 @@ func peekParts(n: Int,
         }
         ptr += 1
     }
+    
+    if ptr - partStart > 0 {
+        parts.append(HalfHitch(sourceObject: nil,
+                               raw: partStart,
+                               count: ptr - partStart,
+                               from: 0,
+                               to: ptr - partStart))
+    }
+    
+    while parts.count < n {
+        parts.append(HalfHitch.empty)
+    }
+    
     return parts
 }
 
@@ -140,8 +153,14 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         }
         
         // obj reference
-        if nextParts[2] == "R" {
-            fatalError("TO BE IMPLEMENTED")
+        if nextParts[2] == "R",
+           let id = nextParts[0].toInt(fuzzy: true),
+           let generation = nextParts[1].toInt(fuzzy: true) {
+            ptr += nextParts[0].count + nextParts[1].count + nextParts[2].count + 2
+            let results = JsonElement(unknown: [:])
+            results.set(key: "id", value: id)
+            results.set(key: "generation", value: generation)
+            return results
         }
         
         // double

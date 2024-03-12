@@ -102,7 +102,7 @@ final class InternalTests: XCTestCase {
     }
     
     // MARK: - Object Definitions
-    func testParseObject0() {
+    func testParseObjectDefinition0() {
         let pdf: Hitch = """
         13 0 obj
         (hello world)
@@ -111,6 +111,21 @@ final class InternalTests: XCTestCase {
         guard var ptr = pdf.raw() else { XCTFail(); return }
         let end = ptr + pdf.count
         XCTAssertEqual(getObject(&ptr, end)?.description, #"{"id":13,"generation":0,"value":"hello world"}"#)
+    }
+    
+    // MARK: - Object Reference
+    func testParseObjectReference0() {
+        let pdf: Hitch = "13 0 R"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"{"id":13,"generation":0}"#)
+    }
+    
+    func testParseObjectReference1() {
+        let pdf: Hitch = "[ 1 0 R 2 0 R 3 0 R ]"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"[{"id":1,"generation":0},{"id":2,"generation":0},{"id":3,"generation":0}]"#)
     }
         
     // MARK: - Misc
