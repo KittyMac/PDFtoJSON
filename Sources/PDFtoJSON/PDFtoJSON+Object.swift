@@ -72,7 +72,8 @@ func peekParts(n: Int,
 }
 
 @inlinable
-func getObject(_ ptr: inout UnsafePointer<UInt8>,
+func getObject(document: JsonElement,
+               _ ptr: inout UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     while ptr < end {
         guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
@@ -94,7 +95,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if ptr + 1 <= end,
            ptr[0] == .lessThan,
            ptr[1] == .lessThan {
-            guard let dictionary = getDictionary(&ptr, end) else { return fail("failed to get dictionary when expected") }
+            guard let dictionary = getDictionary(document: document, &ptr, end) else { return fail("failed to get dictionary when expected") }
             
             // a dictionary can be followed by a steam object; the dictionary
             // is necessary to parse the stream. Therefor we need to skip
@@ -111,7 +112,8 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
                ptr[3] == .e,
                ptr[4] == .a,
                ptr[5] == .m {
-                return getStream(info: dictionary, &ptr, end)
+                return getStream(document: document,
+                                 info: dictionary, &ptr, end)
             }
             
             return dictionary
@@ -124,7 +126,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         
         // Array
         if ptr[0] == .openBrace {
-            return getArray(&ptr, end)
+            return getArray(document: document, &ptr, end)
         }
         
         // Key
@@ -169,7 +171,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if nextParts[2] == "obj",
            let id = nextParts[0].toInt(fuzzy: true),
            let generation = nextParts[1].toInt(fuzzy: true) {
-            return getObjectDefinition(id: id, generation: generation, &ptr, end)
+            return getObjectDefinition(document: document, id: id, generation: generation, &ptr, end)
         }
         
         // obj reference

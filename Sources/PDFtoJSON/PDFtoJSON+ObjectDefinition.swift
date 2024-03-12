@@ -3,7 +3,8 @@ import Spanker
 import Hitch
 
 @inlinable
-func getObjectDefinition(id: Int,
+func getObjectDefinition(document: JsonElement,
+                         id: Int,
                          generation: Int,
                          _ ptr: inout UnsafePointer<UInt8>,
                          _ end: UnsafePointer<UInt8>) -> JsonElement? {
@@ -33,7 +34,7 @@ func getObjectDefinition(id: Int,
         }
         
         guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
-        guard let nextObject = getObject(&ptr, end) else { break }
+        guard let nextObject = getObject(document: document, &ptr, end) else { break }
         value = nextObject
     }
     

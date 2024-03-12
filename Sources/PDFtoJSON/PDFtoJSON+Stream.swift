@@ -4,7 +4,8 @@ import Hitch
 import SWCompression
 
 @inlinable
-func getStream(info: JsonElement,
+func getStream(document: JsonElement,
+               info: JsonElement,
                _ ptr: inout UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard ptr + 6 <= end,
@@ -24,7 +25,8 @@ func getStream(info: JsonElement,
     guard ptr[0] == .lineFeed else { return fail("stream does not have a newline") }
     ptr += 1
     
-    guard let length = info[int: "Length"] else { return fail("failed to get stream length") }
+    guard let lengthObj = reify(document: document, reference: info[element: "Length"]) else { return fail("failed to reify length") }
+    guard let length = lengthObj.intValue else { return fail("failed to get stream length") }
     
     var streamContent = HalfHitch(sourceObject: nil,
                                   raw: ptr,
