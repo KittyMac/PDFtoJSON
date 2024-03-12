@@ -139,7 +139,30 @@ final class InternalTests: XCTestCase {
         let end = ptr + pdf.count
         XCTAssertEqual(getObject(&ptr, end)?.description, #"{"id":1,"generation":0,"value":{"Type":"Page","Parent":{"id":2,"generation":0},"Resources":{"id":4,"generation":0},"Contents":{"id":3,"generation":0},"MediaBox":[0,0,612,792]}}"#)
     }
-        
+    
+    func testParseDictionary3() {
+        let pdf: Hitch = #"""
+        <<
+        /ProcSet [/PDF /Text /ImageB /ImageC]
+        >>
+        """#
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"{"ProcSet":["PDF","Text","ImageB","ImageC"]}"#)
+    }
+    
+    func testParseDictionary4() {
+        let pdf: Hitch = #"""
+        3 0 obj
+        <<
+        /SMask /None>>
+        endobj
+        """#
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"{"id":3,"generation":0,"value":{"SMask":"None"}}"#)
+    }
+    
     // MARK: - Object Definitions
     func testParseObjectDefinition0() {
         let pdf: Hitch = """

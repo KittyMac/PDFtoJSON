@@ -10,7 +10,7 @@ func getKey(_ ptr: inout UnsafePointer<UInt8>,
     ptr += 1
     let start = ptr
     while ptr < end {
-        guard ptr[0].isWhitspace() == false else { break }
+        guard ptr[0].isDelimiter() == false else { break }
         ptr += 1
     }
     

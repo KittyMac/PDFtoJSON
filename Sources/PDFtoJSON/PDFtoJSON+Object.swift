@@ -21,6 +21,18 @@ import Hitch
 // indirect object reference
 // 12 0 R
 
+public extension UInt8 {
+    @inlinable
+    func isDelimiter() -> Bool {
+        switch self {
+        case .space, .newLine, .carriageReturn, .tab, .closeBrace, .greaterThan:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
 @usableFromInline
 func peekParts(n: Int,
                _ start: UnsafePointer<UInt8>,
@@ -31,7 +43,7 @@ func peekParts(n: Int,
     // advance until we've encountered n whitespaces
     var partStart = ptr
     while ptr < end && parts.count < n {
-        if ptr[0].isWhitspace() {
+        if ptr[0].isDelimiter() {
             if ptr - partStart > 0 {
                 parts.append(HalfHitch(sourceObject: nil,
                                        raw: partStart,
@@ -63,7 +75,7 @@ func peekParts(n: Int,
 func getObject(_ ptr: inout UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     while ptr < end {
-        guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
+        guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
         
         // Comment
         if ptr[0] == .percentSign {
@@ -175,18 +187,12 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if nextParts[0].contains(.dot),
            let value = nextParts[0].toDouble(fuzzy: true) {
             ptr += nextParts[0].count
-            if nextParts[0].last == .closeBrace {
-                ptr -= 1
-            }
             return JsonElement(unknown: value)
         }
         
         // int
         if let value = nextParts[0].toInt(fuzzy: true) {
             ptr += nextParts[0].count
-            if nextParts[0].last == .closeBrace {
-                ptr -= 1
-            }
             return JsonElement(unknown: value)
         }
         

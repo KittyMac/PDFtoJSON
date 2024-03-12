@@ -12,7 +12,7 @@ func getArray(_ ptr: inout UnsafePointer<UInt8>,
     ptr += 1
     while ptr < end {
         guard ptr[0] != .closeBrace else { break }
-        guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
+        guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
         guard let nextObject = getObject(&ptr, end) else { break }
         results.append(value: nextObject)
     }

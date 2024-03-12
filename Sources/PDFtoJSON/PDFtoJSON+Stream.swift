@@ -43,6 +43,11 @@ func getStream(info: JsonElement,
     
     if streamContent.isPrintable() {
         info.set(key: "__content", value: streamContent)
+        
+        if let strings = getPostScript(streamContent) {
+            info.set(key: "__strings", value: strings)
+        }
+        
     } else {
         info.set(key: "__content", value: streamContent.base64Encoded())
     }
