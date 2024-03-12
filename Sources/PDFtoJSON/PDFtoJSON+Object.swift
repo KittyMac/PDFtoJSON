@@ -133,8 +133,10 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         let nextParts = peekParts(n: 3, ptr, end)
         
         // obj definition
-        if nextParts[2] == "obj" {
-            fatalError("TO BE IMPLEMENTED")
+        if nextParts[2] == "obj",
+           let id = nextParts[0].toInt(fuzzy: true),
+           let generation = nextParts[1].toInt(fuzzy: true) {
+            return getObjectDefinition(id: id, generation: generation, &ptr, end)
         }
         
         // obj reference
@@ -155,6 +157,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
             return JsonElement(unknown: value)
         }
         
+        fatalError("UNKNOWN TOKEN")
     }
     
     

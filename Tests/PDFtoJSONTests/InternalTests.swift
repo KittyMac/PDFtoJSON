@@ -100,6 +100,18 @@ final class InternalTests: XCTestCase {
         let end = ptr + pdf.count
         XCTAssertEqual(getObject(&ptr, end)?.description, #"["hello","world","world","hello",false,true,null]"#)
     }
+    
+    // MARK: - Object Definitions
+    func testParseObject0() {
+        let pdf: Hitch = """
+        13 0 obj
+        (hello world)
+        endobj
+        """
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"{"id":13,"generation":0,"value":"hello world"}"#)
+    }
         
     // MARK: - Misc
     func testParseNull0() {

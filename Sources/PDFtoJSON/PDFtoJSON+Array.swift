@@ -10,7 +10,7 @@ func getArray(_ ptr: inout UnsafePointer<UInt8>,
     let results = JsonElement(unknown: [])
     
     ptr += 1
-    while true {
+    while ptr < end {
         guard ptr[0] != .closeBrace else { break }
         guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
         guard let nextObject = getObject(&ptr, end) else { break }
