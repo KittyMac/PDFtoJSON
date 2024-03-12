@@ -6,6 +6,14 @@ import Spanker
 
 final class InternalTests: XCTestCase {
     
+    // MARK: - Keys
+    func testParseKey0() {
+        let pdf: Hitch = "/SomeName"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.stringValue, "SomeName")
+    }
+    
     // MARK: - Strings
     func testParseString0() {
         let pdf: Hitch = "(This is a string)"
@@ -95,10 +103,29 @@ final class InternalTests: XCTestCase {
     
     // MARK: - Arrays
     func testParseArray0() {
-        let pdf: Hitch = "[ (hello) <776f726c64> <776f726c64> (hello) false true null ]"
+        let pdf: Hitch = "[ (hello) <776f726c64> /SomeKey false true null 1 2.0 null ]"
         guard var ptr = pdf.raw() else { XCTFail(); return }
         let end = ptr + pdf.count
-        XCTAssertEqual(getObject(&ptr, end)?.description, #"["hello","world","world","hello",false,true,null]"#)
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"["hello","world","SomeKey",false,true,null,1,2.0,null]"#)
+    }
+    
+    // MARK: - Dictionaries
+    func testParseDictionary0() {
+        let pdf: Hitch = "<< /Title (untitled 2) >>"
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"{"Title":"untitled 2"}"#)
+    }
+    
+    func testParseDictionary1() {
+        let pdf: Hitch = #"""
+        << /Title (untitled 2) /Producer (macOS Version 13.6.1 \(Build 22G313\) Quartz PDFContext)
+        /Author (Rocco Bowling) /Creator (TextMate) /CreationDate (D:20240301135834Z00'00')
+        /ModDate (D:20240301135834Z00'00') >>
+        """#
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(&ptr, end)?.description, #"{"Title":"untitled 2","Producer":"macOS Version 13.6.1 (Build 22G313) Quartz PDFContext","Author":"Rocco Bowling","Creator":"TextMate","CreationDate":"D:20240301135834Z00'00'","ModDate":"D:20240301135834Z00'00'"}"#)
     }
     
     // MARK: - Object Definitions

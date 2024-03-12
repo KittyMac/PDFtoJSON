@@ -82,7 +82,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if ptr + 1 <= end,
            ptr[0] == .lessThan,
            ptr[1] == .lessThan {
-            fatalError("TO BE IMPLEMENTED")
+            return getDictionary(&ptr, end)
         }
         
         // Hexstring
@@ -95,9 +95,9 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
             return getArray(&ptr, end)
         }
         
-        // Name / Value pairing
+        // Key
         if ptr[0] == .forwardSlash {
-            fatalError("TO BE IMPLEMENTED")
+            return getKey(&ptr, end)
         }
         
         // null
