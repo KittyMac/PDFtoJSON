@@ -14,17 +14,17 @@ func getStream(info: JsonElement,
           ptr[3] == .e,
           ptr[4] == .a,
           ptr[5] == .m else {
-        return nil
+        return fail("stream not on open stream")
     }
     ptr += 6
     
     if ptr[0] == .carriageReturn {
         ptr += 1
     }
-    guard ptr[0] == .lineFeed else { return nil }
+    guard ptr[0] == .lineFeed else { return fail("stream does not have a newline") }
     ptr += 1
     
-    guard let length = info[int: "Length"] else { return nil }
+    guard let length = info[int: "Length"] else { return fail("failed to get stream length") }
     
     var streamContent = HalfHitch(sourceObject: nil,
                                   raw: ptr,
@@ -68,7 +68,7 @@ func getStream(info: JsonElement,
           ptr[6] == .e,
           ptr[7] == .a,
           ptr[8] == .m else {
-        return nil
+        return fail("failed to find endstream")
     }
     
     ptr += 9

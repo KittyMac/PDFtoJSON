@@ -3,6 +3,22 @@ import Spanker
 import Hitch
 
 @inlinable
+func fail(_ error: String) -> JsonElement? {
+    #if DEBUG
+    fatalError(error)
+    #endif
+    return nil
+}
+
+@inlinable
+func fail(_ error: String) -> HalfHitch? {
+    #if DEBUG
+    fatalError(error)
+    #endif
+    return nil
+}
+
+@inlinable
 func getLine(_ ptr: inout UnsafePointer<UInt8>,
              _ end: UnsafePointer<UInt8>) -> HalfHitch? {
     let start = ptr
@@ -13,7 +29,7 @@ func getLine(_ ptr: inout UnsafePointer<UInt8>,
         }
     }
     
-    guard ptr > start else { return nil }
+    guard ptr > start else { return fail("failed to get line") }
     
     ptr += 1
     return HalfHitch(sourceObject: nil, raw: start, count: ptr - start, from: 0, to: ptr - start)

@@ -6,7 +6,7 @@ import Hitch
 func getDictionary(_ ptr: inout UnsafePointer<UInt8>,
                    _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard ptr[0] == .lessThan,
-          ptr[1] == .lessThan else { return nil }
+          ptr[1] == .lessThan else { return fail("dictionary not on open angle brackets") }
     
     let results = JsonElement(unknown: [:])
     

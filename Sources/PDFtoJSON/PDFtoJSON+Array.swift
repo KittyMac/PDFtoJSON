@@ -5,7 +5,7 @@ import Hitch
 @inlinable
 func getArray(_ ptr: inout UnsafePointer<UInt8>,
               _ end: UnsafePointer<UInt8>) -> JsonElement? {
-    guard ptr[0] == .openBrace else { return nil }
+    guard ptr[0] == .openBrace else { return fail("array not on open brace") }
     
     let results = JsonElement(unknown: [])
     

@@ -94,7 +94,7 @@ func getObject(_ ptr: inout UnsafePointer<UInt8>,
         if ptr + 1 <= end,
            ptr[0] == .lessThan,
            ptr[1] == .lessThan {
-            guard let dictionary = getDictionary(&ptr, end) else { return nil }
+            guard let dictionary = getDictionary(&ptr, end) else { return fail("failed to get dictionary when expected") }
             
             // a dictionary can be followed by a steam object; the dictionary
             // is necessary to parse the stream. Therefor we need to skip

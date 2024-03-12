@@ -13,7 +13,7 @@ func getPostScript(_ hitch: HalfHitch) -> JsonElement? {
     let strings = JsonElement(unknown: [])
     
     
-    guard var ptr = hitch.raw() else { return nil }
+    guard var ptr = hitch.raw() else { return fail("failed to get raw for postscript") }
     let end = ptr + hitch.count
     
     while ptr < end {

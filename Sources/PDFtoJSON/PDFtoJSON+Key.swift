@@ -5,7 +5,7 @@ import Hitch
 @inlinable
 func getKey(_ ptr: inout UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
-    guard ptr[0] == .forwardSlash else { return nil }
+    guard ptr[0] == .forwardSlash else { return fail("key not on forward slash") }
     
     ptr += 1
     let start = ptr

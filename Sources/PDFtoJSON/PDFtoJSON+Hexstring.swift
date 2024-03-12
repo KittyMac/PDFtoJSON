@@ -25,7 +25,7 @@ extension Hitch {
 @inlinable
 func getHexstring(_ ptr: inout UnsafePointer<UInt8>,
                   _ end: UnsafePointer<UInt8>) -> JsonElement? {
-    guard ptr[0] == .lessThan else { return nil }
+    guard ptr[0] == .lessThan else { return fail("hexstring not on open angle brackets") }
     
     let start = ptr
     
