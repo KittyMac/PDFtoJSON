@@ -25,7 +25,7 @@ public extension UInt8 {
     @inlinable
     func isDelimiter() -> Bool {
         switch self {
-        case .space, .newLine, .carriageReturn, .tab, .closeBrace, .greaterThan:
+        case .space, .newLine, .carriageReturn, .tab, .closeBrace, .openBrace, .greaterThan, .lessThan, .forwardSlash, .parenOpen, .parenClose:
             return true
         default:
             return false
@@ -77,11 +77,11 @@ func getObject(document: JsonElement,
                _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     while ptr < end {
-        guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
+        guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
         
         // Comment
         if ptr[0] == .percentSign {
-            while ptr < end && ptr[0] != .newLine {
+            while ptr < end && ptr[0].isWhitspace() == false {
                 ptr += 1
             }
             return nil
@@ -198,6 +198,10 @@ func getObject(document: JsonElement,
             ptr += nextParts[0].count
             return JsonElement(unknown: value)
         }
+        
+        printAround(ptr: ptr,
+                    start: start,
+                    end: end)
         
         fatalError("UNKNOWN TOKEN")
     }

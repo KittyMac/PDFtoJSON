@@ -18,6 +18,26 @@ func fail(_ error: String) -> HalfHitch? {
     return nil
 }
 
+@inlinable
+func printAround(ptr: UnsafePointer<UInt8>,
+                 start: UnsafePointer<UInt8>,
+                 end: UnsafePointer<UInt8>) {
+    let minIdx = max(0, ptr - start - 20)
+    let maxIdx = min(end - start, ptr - start + 20)
+    let snip: Hitch = HalfHitch(sourceObject: nil, raw: start, count: end - start, from: minIdx, to: maxIdx).hitch()
+    snip.replace(occurencesOf: "\n", with: "_")
+    snip.replace(occurencesOf: "\r", with: "_")
+    
+    var startIdx = ptr - start - 20
+    while startIdx < 0 {
+        snip.insert(.space, index: 0)
+        startIdx += 1
+    }
+    
+    print(snip)
+    print("                    ^                    ")
+}
+
 public enum PDFtoJSON {
 
     @inlinable

@@ -5,8 +5,49 @@ import Hitch
 extension HalfHitch {
     @inlinable
     func isPrintable() -> Bool {
-        for i in self where i == 0 || i > 127 {
-            return false
+        return isUTF8()
+    }
+    
+    @inlinable
+    func isUTF8() -> Bool {
+        guard let data = raw() else { return false }
+        var index = 0
+        while index < count {
+            let byte = data[index]
+            if (byte & 0x80) == 0 {
+                // Single-byte UTF-8 character
+                index += 1
+            } else if (byte & 0xE0) == 0xC0 {
+                // Two-byte UTF-8 character
+                if index + 1 >= count {
+                    return false
+                }
+                if (data[index + 1] & 0xC0) != 0x80 {
+                    return false
+                }
+                index += 2
+            } else if (byte & 0xF0) == 0xE0 {
+                // Three-byte UTF-8 character
+                if index + 2 >= count {
+                    return false
+                }
+                if (data[index + 1] & 0xC0) != 0x80 || (data[index + 2] & 0xC0) != 0x80 {
+                    return false
+                }
+                index += 3
+            } else if (byte & 0xF8) == 0xF0 {
+                // Four-byte UTF-8 character
+                if index + 3 >= count {
+                    return false
+                }
+                if (data[index + 1] & 0xC0) != 0x80 || (data[index + 2] & 0xC0) != 0x80 || (data[index + 3] & 0xC0) != 0x80 {
+                    return false
+                }
+                index += 4
+            } else {
+                // Invalid UTF-8 byte sequence
+                return false
+            }
         }
         return true
     }
@@ -15,8 +56,49 @@ extension HalfHitch {
 extension Hitch {
     @inlinable
     func isPrintable() -> Bool {
-        for i in self where i == 0 || i > 127 {
-            return false
+        return isUTF8()
+    }
+    
+    @inlinable
+    func isUTF8() -> Bool {
+        guard let data = raw() else { return false }
+        var index = 0
+        while index < count {
+            let byte = data[index]
+            if (byte & 0x80) == 0 {
+                // Single-byte UTF-8 character
+                index += 1
+            } else if (byte & 0xE0) == 0xC0 {
+                // Two-byte UTF-8 character
+                if index + 1 >= count {
+                    return false
+                }
+                if (data[index + 1] & 0xC0) != 0x80 {
+                    return false
+                }
+                index += 2
+            } else if (byte & 0xF0) == 0xE0 {
+                // Three-byte UTF-8 character
+                if index + 2 >= count {
+                    return false
+                }
+                if (data[index + 1] & 0xC0) != 0x80 || (data[index + 2] & 0xC0) != 0x80 {
+                    return false
+                }
+                index += 3
+            } else if (byte & 0xF8) == 0xF0 {
+                // Four-byte UTF-8 character
+                if index + 3 >= count {
+                    return false
+                }
+                if (data[index + 1] & 0xC0) != 0x80 || (data[index + 2] & 0xC0) != 0x80 || (data[index + 3] & 0xC0) != 0x80 {
+                    return false
+                }
+                index += 4
+            } else {
+                // Invalid UTF-8 byte sequence
+                return false
+            }
         }
         return true
     }

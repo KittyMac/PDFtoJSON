@@ -9,7 +9,7 @@ func getLine(_ ptr: inout UnsafePointer<UInt8>,
     let start = ptr
     while ptr < end {
         ptr += 1
-        if ptr.pointee == .newLine {
+        if ptr.pointee == .newLine || ptr.pointee == .carriageReturn {
             break
         }
     }

@@ -163,6 +163,25 @@ final class InternalTests: XCTestCase {
         XCTAssertEqual(getObject(document: ^[], &ptr, ptr, end)?.description, #"{"id":3,"generation":0,"value":{"SMask":"None"}}"#)
     }
     
+    func testParseDictionary5() {
+        let pdf: Hitch = #"<</Subtype/Form/Filter/FlateDecode/Type/XObject/Matrix [1 0 0 1 0 0]/FormType 1/Resources<</ProcSet [/PDF /Text /ImageB /ImageC /ImageI]/Font<</F1 2 0 R>>>>/BBox[-20 -20 100 100]/Length 38>>"#
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(document: ^[], &ptr, ptr, end)?.description, #"{"Subtype":"Form","Filter":"FlateDecode","Type":"XObject","Matrix":[1,0,0,1,0,0],"FormType":1,"Resources":{"ProcSet":["PDF","Text","ImageB","ImageC","ImageI"],"Font":{"F1":{"id":2,"generation":0}}},"BBox":[-20,-20,100,100],"Length":38}"#)
+    }
+    
+    func testParseDictionary6() {
+        let pdf: Hitch = """
+        9 0 obj
+        <</Kids[10 0 R]/Type/Pages/Count 1/ITXT(2.1.7)>>
+        endobj
+        """
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(document: ^[], &ptr, ptr, end)?.description, #"{"id":9,"generation":0,"value":{"Kids":[{"id":10,"generation":0}],"Type":"Pages","Count":1,"ITXT":"2.1.7"}}"#)
+    }
+
+    
     // MARK: - Object Definitions
     func testParseObjectDefinition0() {
         let pdf: Hitch = """
