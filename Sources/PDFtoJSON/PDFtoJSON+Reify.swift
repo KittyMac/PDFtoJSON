@@ -26,13 +26,12 @@ func reify(document: JsonElement,
         // load the document object
         // preload all xref objects
         guard let xref = document[element: "xref"] else { return fail("document has no xref") }
-        guard let xrefValue = xref[element: id] else { return fail("object ref missing") }
+        guard let xrefValue = xref[element: "{0}" << [id]] else { return fail("object ref missing") }
         guard xrefValue.type != .null else { return nil }
         guard let offset = xrefValue[int: "offset"] else { return fail("missing xref offset") }
-        guard let index = xrefValue[int: "index"] else { return fail("missing xref index") }
             
         var objectPtr = start + offset
-        guard let newObject = getObject(document: document, &objectPtr, start, end) else { return fail("failed to load xref object \(index)") }
+        guard let newObject = getObject(document: document, &objectPtr, start, end) else { return fail("failed to load xref object \(id)") }
         
         objects.set(key: objectId, value: newObject)
         return newObject[element: "value"]

@@ -7,7 +7,7 @@ func getXrefTable(document: JsonElement,
                   _ ptr: inout UnsafePointer<UInt8>,
                   _ start: UnsafePointer<UInt8>,
                   _ end: UnsafePointer<UInt8>) -> String? {
-    let xref = JsonElement(unknown: ^[])
+    let xref = JsonElement(unknown: ^[:])
     
     var index = 0
     while ptr < end {
@@ -27,23 +27,27 @@ func getXrefTable(document: JsonElement,
             guard let _ = line.substring(0, 10)?.toInt() else { return "malformed xref line: \(line)" }
             guard let _ = line.substring(11, 16)?.toInt() else { return "malformed xref line: \(line)" }
 
-            xref.append(value: JsonElement.null())
+            xref.set(key: "{0}" << [index], value: JsonElement.null())
             
             index += 1
-        }
-        
-        if line.last == .n {
+        } else if line.last == .n {
             // 0000000351 00000 n
             guard let offset = line.substring(0, 10)?.toInt() else { return "malformed xref line: \(line)" }
             guard let generation = line.substring(11, 16)?.toInt() else { return "malformed xref line: \(line)" }
             
-            xref.append(value: ^[
-                "index": index,
+            xref.set(key: "{0}" << [index], value: ^[
                 "offset": offset,
                 "generation": generation
             ])
             
             index += 1
+        } else {
+            // like: 28 10
+            // object starting id and number of object references
+            let parts: [HalfHitch] = line.components(separatedBy: " ")
+            if let startIdx = parts[0].toInt() {
+                index = startIdx
+            }
         }
     }
     

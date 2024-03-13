@@ -9,7 +9,11 @@ func getLine(_ ptr: inout UnsafePointer<UInt8>,
     let start = ptr
     while ptr < end {
         ptr += 1
-        if ptr.pointee == .newLine || ptr.pointee == .carriageReturn {
+        if ptr[0] == .carriageReturn && ptr[1] == .lineFeed {
+            ptr += 1
+            break
+        }
+        if ptr[0] == .newLine || ptr[0] == .carriageReturn {
             break
         }
     }
@@ -95,7 +99,8 @@ extension PDFtoJSON {
             
             // preload all xref objects
             guard let xref = document[element: "xref"] else { return ("xref is missing", nil) }
-            for objectId in 0..<xref.count {
+            for objectIdString in xref.iterKeys {
+                guard let objectId = objectIdString.toInt() else { return ("xref key is not an objectId", nil) }
                 _ = reify(document: document, id: objectId, start, end)
             }
                         
