@@ -4,6 +4,7 @@ import Hitch
 
 @inlinable
 func getString(_ ptr: inout UnsafePointer<UInt8>,
+               _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard ptr[0] == .parenOpen else { return fail("string not on open paren") }
     

@@ -7,6 +7,7 @@ func getObjectDefinition(document: JsonElement,
                          id: Int,
                          generation: Int,
                          _ ptr: inout UnsafePointer<UInt8>,
+                         _ start: UnsafePointer<UInt8>,
                          _ end: UnsafePointer<UInt8>) -> JsonElement? {
     var value = JsonElement.null()
     
@@ -34,7 +35,7 @@ func getObjectDefinition(document: JsonElement,
         }
         
         guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
-        guard let nextObject = getObject(document: document, &ptr, end) else { break }
+        guard let nextObject = getObject(document: document, &ptr, start, end) else { break }
         value = nextObject
     }
     

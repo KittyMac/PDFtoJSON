@@ -74,6 +74,7 @@ func peekParts(n: Int,
 @inlinable
 func getObject(document: JsonElement,
                _ ptr: inout UnsafePointer<UInt8>,
+               _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     while ptr < end {
         guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
@@ -88,14 +89,14 @@ func getObject(document: JsonElement,
         
         // String
         if ptr[0] == .parenOpen {
-            return getString(&ptr, end)
+            return getString(&ptr, start, end)
         }
         
         // Dictionary
         if ptr + 1 <= end,
            ptr[0] == .lessThan,
            ptr[1] == .lessThan {
-            guard let dictionary = getDictionary(document: document, &ptr, end) else { return fail("failed to get dictionary when expected") }
+            guard let dictionary = getDictionary(document: document, &ptr, start, end) else { return fail("failed to get dictionary when expected") }
             
             // a dictionary can be followed by a steam object; the dictionary
             // is necessary to parse the stream. Therefor we need to skip
@@ -113,7 +114,7 @@ func getObject(document: JsonElement,
                ptr[4] == .a,
                ptr[5] == .m {
                 return getStream(document: document,
-                                 info: dictionary, &ptr, end)
+                                 info: dictionary, &ptr, start, end)
             }
             
             return dictionary
@@ -121,17 +122,17 @@ func getObject(document: JsonElement,
         
         // Hexstring
         if ptr[0] == .lessThan {
-            return getHexstring(&ptr, end)
+            return getHexstring(&ptr, start, end)
         }
         
         // Array
         if ptr[0] == .openBrace {
-            return getArray(document: document, &ptr, end)
+            return getArray(document: document, &ptr, start, end)
         }
         
         // Key
         if ptr[0] == .forwardSlash {
-            return getKey(&ptr, end)
+            return getKey(&ptr, start, end)
         }
         
         // null
@@ -171,7 +172,7 @@ func getObject(document: JsonElement,
         if nextParts[2] == "obj",
            let id = nextParts[0].toInt(fuzzy: true),
            let generation = nextParts[1].toInt(fuzzy: true) {
-            return getObjectDefinition(document: document, id: id, generation: generation, &ptr, end)
+            return getObjectDefinition(document: document, id: id, generation: generation, &ptr, start, end)
         }
         
         // obj reference

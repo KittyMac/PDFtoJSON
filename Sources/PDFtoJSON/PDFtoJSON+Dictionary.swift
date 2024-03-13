@@ -5,6 +5,7 @@ import Hitch
 @inlinable
 func getDictionary(document: JsonElement,
                    _ ptr: inout UnsafePointer<UInt8>,
+                   _ start: UnsafePointer<UInt8>,
                    _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard ptr[0] == .lessThan,
           ptr[1] == .lessThan else { return fail("dictionary not on open angle brackets") }
@@ -21,9 +22,9 @@ func getDictionary(document: JsonElement,
             break
         }
         
-        guard let titleObject = getObject(document: document, &ptr, end) else { break }
+        guard let titleObject = getObject(document: document, &ptr, start, end) else { break }
         guard let titleString = titleObject.halfHitchValue else { break }
-        guard let valueObject = getObject(document: document, &ptr, end) else { break }
+        guard let valueObject = getObject(document: document, &ptr, start, end) else { break }
         
         results.set(key: titleString, value: valueObject)
     }

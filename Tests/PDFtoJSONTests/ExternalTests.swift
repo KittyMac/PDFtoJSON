@@ -22,7 +22,7 @@ final class ExternalTests: XCTestCase {
     
     #if os(macOS)
     func testPDF1() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test1.pdf"))!
+        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test2.pdf"))!
         
         PDFtoJSON.parsed(hitch: pdf) { root in
             print(root!.toHitch())

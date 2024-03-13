@@ -3,23 +3,8 @@ import Spanker
 import Hitch
 
 @inlinable
-func fail(_ error: String) -> JsonElement? {
-    #if DEBUG
-    fatalError(error)
-    #endif
-    return nil
-}
-
-@inlinable
-func fail(_ error: String) -> HalfHitch? {
-    #if DEBUG
-    fatalError(error)
-    #endif
-    return nil
-}
-
-@inlinable
 func getLine(_ ptr: inout UnsafePointer<UInt8>,
+             _ start: UnsafePointer<UInt8>,
              _ end: UnsafePointer<UInt8>) -> HalfHitch? {
     let start = ptr
     while ptr < end {
@@ -83,7 +68,7 @@ extension PDFtoJSON {
             var ptr = start
             
             // Parse the header
-            guard let header = getLine(&ptr, end) else { return ("unable to get pdf header", nil) }
+            guard let header = getLine(&ptr, start, end) else { return ("unable to get pdf header", nil) }
             
             guard header[0] == .percentSign,
                   header[1] == .P,
@@ -101,23 +86,17 @@ extension PDFtoJSON {
             guard let startxrefIdx = pdf.lastIndex(of: "startxref") else { return ("unable to find startxref", nil) }
             
             ptr = start + startxrefIdx + 10
-            guard let startxrefLine = getLine(&ptr, end) else { return ("unable to get startxref", nil) }
+            guard let startxrefLine = getLine(&ptr, start, end) else { return ("unable to get startxref", nil) }
             
             guard let xrefIdx = startxrefLine.toInt() else { return ("unable to get xref offset", nil) }
 
             ptr = start + xrefIdx
-            if let error = getXrefTable(document: document, &ptr, end) { return (error, nil) }
+            if let error = getXrefTable(document: document, &ptr, start, end) { return (error, nil) }
             
             // preload all xref objects
             guard let xref = document[element: "xref"] else { return ("xref is missing", nil) }
-            for xrefValue in xref.iterValues {
-                guard let offset = xrefValue[int: "offset"] else { return ("missing xref offset", nil) }
-                guard let index = xrefValue[int: "index"] else { return ("missing xref index", nil) }
-                
-                var objectPtr = start + offset
-                guard let object = getObject(document: document, &objectPtr, end) else { return ("failed to load xref object \(index)", nil) }
-                
-                documentObjects.set(key: "{0}" << [index], value: object)
+            for objectId in 0..<xref.count {
+                _ = reify(document: document, id: objectId, start, end)
             }
                         
             // Now that we have the xref table, parse needed info

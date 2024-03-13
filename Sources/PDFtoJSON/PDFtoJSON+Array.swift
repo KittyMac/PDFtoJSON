@@ -5,6 +5,7 @@ import Hitch
 @inlinable
 func getArray(document: JsonElement,
               _ ptr: inout UnsafePointer<UInt8>,
+              _ start: UnsafePointer<UInt8>,
               _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard ptr[0] == .openBrace else { return fail("array not on open brace") }
     
@@ -14,7 +15,7 @@ func getArray(document: JsonElement,
     while ptr < end {
         guard ptr[0] != .closeBrace else { break }
         guard ptr[0].isDelimiter() == false else { ptr += 1; continue }
-        guard let nextObject = getObject(document: document, &ptr, end) else { break }
+        guard let nextObject = getObject(document: document, &ptr, start, end) else { break }
         results.append(value: nextObject)
     }
     

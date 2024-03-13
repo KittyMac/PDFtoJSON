@@ -2,6 +2,22 @@ import Foundation
 import Spanker
 import Hitch
 
+@inlinable
+func fail(_ error: String) -> JsonElement? {
+    #if DEBUG
+    fatalError(error)
+    #endif
+    return nil
+}
+
+@inlinable
+func fail(_ error: String) -> HalfHitch? {
+    #if DEBUG
+    fatalError(error)
+    #endif
+    return nil
+}
+
 public enum PDFtoJSON {
 
     @inlinable

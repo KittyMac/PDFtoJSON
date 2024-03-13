@@ -14,11 +14,12 @@ func getPostScript(_ hitch: HalfHitch) -> JsonElement? {
     
     
     guard var ptr = hitch.raw() else { return fail("failed to get raw for postscript") }
+    let start = ptr
     let end = ptr + hitch.count
     
     while ptr < end {
         if ptr[0] == .parenOpen {
-            if let string = getString(&ptr, end) {
+            if let string = getString(&ptr, start, end) {
                 strings.append(value: string)
             }
         }
