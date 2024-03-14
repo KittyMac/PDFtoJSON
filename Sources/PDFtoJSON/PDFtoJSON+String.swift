@@ -6,6 +6,20 @@ import Hitch
 func getString(document: JsonElement,
                id: Int,
                generation: Int,
+               _ value: HalfHitch) -> JsonElement? {
+    guard var ptr = value.raw() else { return nil }
+    return getString(document: document,
+                     id: id,
+                     generation: generation,
+                     &ptr,
+                     ptr,
+                     ptr + value.count)
+}
+
+@inlinable
+func getString(document: JsonElement,
+               id: Int,
+               generation: Int,
                _ ptr: inout UnsafePointer<UInt8>,
                _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
@@ -35,9 +49,9 @@ func getString(document: JsonElement,
     }
     
     let (error, newRawString) = decrypt(document: document,
-                                     id: id,
-                                     generation: generation,
-                                     content: rawString.halfhitch())
+                                        id: id,
+                                        generation: generation,
+                                        content: rawString.halfhitch())
     guard let newRawString = newRawString else { return fail(error ?? "unknown error decrypting hexstring") }
         
     let string = Hitch(capacity: newRawString.count)
