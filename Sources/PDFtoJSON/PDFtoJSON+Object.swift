@@ -73,6 +73,8 @@ func peekParts(n: Int,
 
 @inlinable
 func getObject(document: JsonElement,
+               id: Int,
+               generation: Int,
                _ ptr: inout UnsafePointer<UInt8>,
                _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
@@ -89,14 +91,18 @@ func getObject(document: JsonElement,
         
         // String
         if ptr[0] == .parenOpen {
-            return getString(&ptr, start, end)
+            return getString(document: document,
+                             id: id,
+                             generation: generation, &ptr, start, end)
         }
         
         // Dictionary
         if ptr + 1 <= end,
            ptr[0] == .lessThan,
            ptr[1] == .lessThan {
-            guard let dictionary = getDictionary(document: document, &ptr, start, end) else { return fail("failed to get dictionary when expected") }
+            guard let dictionary = getDictionary(document: document,
+                                                 id: id,
+                                                 generation: generation, &ptr, start, end) else { return fail("failed to get dictionary when expected") }
             
             // a dictionary can be followed by a steam object; the dictionary
             // is necessary to parse the stream. Therefor we need to skip
@@ -114,7 +120,9 @@ func getObject(document: JsonElement,
                ptr[4] == .a,
                ptr[5] == .m {
                 return getStream(document: document,
-                                 info: dictionary, &ptr, start, end)
+                                 id: id,
+                                 generation: generation,
+                                 streamInfo: dictionary, &ptr, start, end)
             }
             
             return dictionary
@@ -122,12 +130,17 @@ func getObject(document: JsonElement,
         
         // Hexstring
         if ptr[0] == .lessThan {
-            return getHexstring(&ptr, start, end)
+            return getHexstring(document: document,
+                                id: id,
+                                generation: generation,
+                                &ptr, start, end)
         }
         
         // Array
         if ptr[0] == .openBrace {
-            return getArray(document: document, &ptr, start, end)
+            return getArray(document: document,
+                            id: id,
+                            generation: generation, &ptr, start, end)
         }
         
         // Key

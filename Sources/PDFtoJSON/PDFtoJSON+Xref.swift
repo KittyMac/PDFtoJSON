@@ -13,7 +13,9 @@ func getXrefTable(document: JsonElement,
     while ptr < end {
         guard let line = getLine(&ptr, start, end)?.trimmed() else { return "failed to read xref line" }
         if line == "trailer" {
-            guard let trailerDict = getDictionary(document: document, &ptr, start, end) else { return "failed to parse trailer dictionary" }
+            guard let trailerDict = getDictionary(document: document,
+                                                  id: -1,
+                                                  generation: -1, &ptr, start, end) else { return "failed to parse trailer dictionary" }
             document.set(key: "trailer", value: trailerDict)
             break
         }

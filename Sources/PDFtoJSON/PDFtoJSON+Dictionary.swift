@@ -4,6 +4,8 @@ import Hitch
 
 @inlinable
 func getDictionary(document: JsonElement,
+                   id: Int,
+                   generation: Int,
                    _ ptr: inout UnsafePointer<UInt8>,
                    _ start: UnsafePointer<UInt8>,
                    _ end: UnsafePointer<UInt8>) -> JsonElement? {
@@ -22,9 +24,13 @@ func getDictionary(document: JsonElement,
             break
         }
         
-        guard let titleObject = getObject(document: document, &ptr, start, end) else { break }
+        guard let titleObject = getObject(document: document,
+                                          id: id,
+                                          generation: generation, &ptr, start, end) else { break }
         guard let titleString = titleObject.halfHitchValue else { break }
-        guard let valueObject = getObject(document: document, &ptr, start, end) else { break }
+        guard let valueObject = getObject(document: document,
+                                          id: id,
+                                          generation: generation, &ptr, start, end) else { break }
         
         results.set(key: titleString, value: valueObject)
     }

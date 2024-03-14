@@ -97,6 +97,18 @@ extension PDFtoJSON {
             ptr = start + xrefIdx
             if let error = getXrefTable(document: document, &ptr, start, end) { return (error, nil) }
             
+            // check for encryption
+            guard let trailer = document[element: "trailer"] else { return ("document is missing trailer", nil) }
+            if let encryptRef = trailer[element: "Encrypt"],
+               let encrypt = reify(document: document, reference: encryptRef, start, end) {
+                
+                if let error = generateKeys(document: document,
+                                            encrypt: encrypt) {
+                    return (error, nil)
+                }
+            }
+            
+            
             // preload all xref objects
             guard let xref = document[element: "xref"] else { return ("xref is missing", nil) }
             for objectIdString in xref.iterKeys {

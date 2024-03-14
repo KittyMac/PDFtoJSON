@@ -4,7 +4,8 @@ import Hitch
 import SWCompression
 
 @inlinable
-func getPostScript(_ hitch: HalfHitch) -> JsonElement? {
+func getPostScript(document: JsonElement,
+                   _ hitch: HalfHitch) -> JsonElement? {
     // Given a postscript string, extract all text renders and their positioning
     
     // TODO: actually handle the postscript movement and transformations. For now, just find
@@ -19,7 +20,9 @@ func getPostScript(_ hitch: HalfHitch) -> JsonElement? {
     
     while ptr < end {
         if ptr[0] == .parenOpen {
-            if let string = getString(&ptr, start, end) {
+            if let string = getString(document: document,
+                                      id: -1,
+                                      generation: -1, &ptr, start, end) {
                 strings.append(value: string)
             }
         }

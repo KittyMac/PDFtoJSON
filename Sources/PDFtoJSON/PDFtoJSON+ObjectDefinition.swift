@@ -35,7 +35,9 @@ func getObjectDefinition(document: JsonElement,
         }
         
         guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
-        guard let nextObject = getObject(document: document, &ptr, start, end) else { break }
+        guard let nextObject = getObject(document: document,
+                                         id: id,
+                                         generation: generation, &ptr, start, end) else { break }
         value = nextObject
     }
     

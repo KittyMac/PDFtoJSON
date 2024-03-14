@@ -3,7 +3,10 @@ import Spanker
 import Hitch
 
 @inlinable
-func getString(_ ptr: inout UnsafePointer<UInt8>,
+func getString(document: JsonElement,
+               id: Int,
+               generation: Int,
+               _ ptr: inout UnsafePointer<UInt8>,
                _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard ptr[0] == .parenOpen else { return fail("string not on open paren") }
@@ -11,10 +14,13 @@ func getString(_ ptr: inout UnsafePointer<UInt8>,
     let start = ptr
     
     // find the whole string content first to find the capacity
+    let rawString = Hitch(capacity: 256)
+    
     var parenLevel = 0
     ptr += 1
     while ptr < end {
         if ptr[0] == .backSlash {
+            rawString.append(ptr[0])
             ptr += 1
         } else if ptr[0] == .parenOpen {
             parenLevel += 1
@@ -24,10 +30,17 @@ func getString(_ ptr: inout UnsafePointer<UInt8>,
             }
             parenLevel -= 1
         }
+        rawString.append(ptr[0])
         ptr += 1
     }
+    
+    let (error, newRawString) = decrypt(document: document,
+                                     id: id,
+                                     generation: generation,
+                                     content: rawString.halfhitch())
+    guard let newRawString = newRawString else { return fail(error ?? "unknown error decrypting hexstring") }
         
-    let string = Hitch(capacity: ptr - start)
+    let string = Hitch(capacity: newRawString.count)
     
     // run through it again unescaping characters
     var ptr2 = start + 1

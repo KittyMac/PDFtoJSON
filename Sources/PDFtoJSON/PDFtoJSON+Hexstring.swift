@@ -105,7 +105,10 @@ extension Hitch {
 }
 
 @inlinable
-func getHexstring(_ ptr: inout UnsafePointer<UInt8>,
+func getHexstring(document: JsonElement,
+                  id: Int,
+                  generation: Int,
+                  _ ptr: inout UnsafePointer<UInt8>,
                   _ start: UnsafePointer<UInt8>,
                   _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard ptr[0] == .lessThan else { return fail("hexstring not on open angle brackets") }
@@ -134,9 +137,15 @@ func getHexstring(_ ptr: inout UnsafePointer<UInt8>,
     
     ptr += 1
     
+    let (error, newString) = decrypt(document: document,
+                                     id: id,
+                                     generation: generation,
+                                     content: string.halfhitch())
+    guard let newString = newString else { return fail(error ?? "unknown error decrypting hexstring") }
+    
     if string.isPrintable() {
-        return JsonElement(unknown: string)
+        return JsonElement(unknown: newString)
     }
     
-    return JsonElement(unknown: string.base64Encoded())
+    return JsonElement(unknown: newString.base64Encoded())
 }
