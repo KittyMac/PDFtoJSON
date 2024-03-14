@@ -18,9 +18,9 @@ func reify(document: JsonElement,
     // TODO: actually handle the postscript movement and transformations. For now, just find
     // all strings and output them...
     
-    let strings = JsonElement(unknown: [])
-    
+    print("=======================")
     print(content)
+    print("=======================")
     
     guard var ptr = content.raw() else { return fail("failed to get raw for postscript") }
     let start = ptr
@@ -40,6 +40,8 @@ func reify(document: JsonElement,
     // ' (move to next line and show text): example needed...
     // " (set word spacing, mvoe to next line and show text): example needed...
     
+    var strings: [JsonElement] = []
+    
     var stack: [HalfHitch] = []
     
     var matrixStack: [Matrix3x3] = []
@@ -51,28 +53,20 @@ func reify(document: JsonElement,
             continue
         }
         
-        if ptr[0] == .openBrace {
-            if let array = getArray(document: document,
-                                    id: id,
-                                    generation: generation,
-                                    &ptr, start, end) {
-                stack.append("")
-            }
-            continue
-        } else if ptr[0] == .parenOpen {
-            if let string = getString(document: document,
-                                      id: id,
-                                      generation: generation,
-                                      &ptr, start, end)?.halfHitchValue {
+        if ptr[0] == .openBrace || ptr[0] == .lessThan || ptr[0] == .parenOpen,
+           let object = getObject(document: document,
+                                  id: id,
+                                  generation: generation,
+                                  &ptr, start, end) {
+            if let string = object.halfHitchValue {
                 stack.append(string)
+                continue
             }
-            continue
-        } else if ptr[0] == .lessThan {
-            if let string = getHexstring(document: document,
-                                         id: id,
-                                         generation: generation,
-                                         &ptr, start, end)?.halfHitchValue {
-                stack.append(string)
+            
+            for item in object.iterValues {
+                if let string = item.halfHitchValue {
+                    stack.append(string)
+                }
             }
             continue
         }
@@ -134,9 +128,9 @@ func reify(document: JsonElement,
                 let (x, y) = matrix.transform(x: 0, y: 0)
                 let text = ^[:]
                 text.set(key: "x", value: x)
-                text.set(key: "y", value: y)
+                text.set(key: "y", value: floor(y / 4) * 4)
                 text.set(key: "text", value: stack.removeLast())
-                strings.append(value: text)
+                strings.append(text)
             }
             ptr += value.count
             break
@@ -145,9 +139,9 @@ func reify(document: JsonElement,
                 let (x, y) = matrix.transform(x: 0, y: 0)
                 let text = ^[:]
                 text.set(key: "x", value: x)
-                text.set(key: "y", value: y)
+                text.set(key: "y", value: floor(y / 4) * 4)
                 text.set(key: "text", value: stack.removeLast())
-                strings.append(value: text)
+                strings.append(text)
             }
             ptr += value.count
             break
@@ -157,5 +151,22 @@ func reify(document: JsonElement,
         }
     }
     
-    return strings
+    // remove empty strings
+    strings = strings.filter {
+        ($0[element: "text"]?.halfHitchValue?.count ?? 0) > 0
+    }
+    
+    // sort top to bottom, left to right
+    strings = strings.sorted {
+        let y0 = $0[int: "y"] ?? 0
+        let y1 = $1[int: "y"] ?? 0
+        guard y0 == y1 else {
+            return y0 < y1
+        }
+        let x0 = $0[int: "x"] ?? 0
+        let x1 = $1[int: "x"] ?? 0
+        return x0 < x1
+    }
+    
+    return JsonElement(unknown: strings)
 }

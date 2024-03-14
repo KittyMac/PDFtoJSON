@@ -10,8 +10,8 @@ func reify(document: JsonElement,
            parentInfo: JsonElement,
            unknown content: HalfHitch) -> JsonElement? {
     
-    print(objectInfo)
-    print(parentInfo)
+    //print(objectInfo)
+    //print(parentInfo)
     
     // Given some content, parse it out.
     if isImage(objectInfo) {
