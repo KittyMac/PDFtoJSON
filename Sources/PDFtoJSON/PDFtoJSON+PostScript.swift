@@ -5,7 +5,10 @@ import SWCompression
 
 @inlinable
 func getPostScript(document: JsonElement,
+                   id: Int,
+                   generation: Int,
                    _ hitch: HalfHitch) -> JsonElement? {
+    guard hitch.contains("g ") || hitch.contains("G ") else { return nil }
     // Given a postscript string, extract all text renders and their positioning
     
     // TODO: actually handle the postscript movement and transformations. For now, just find
@@ -21,8 +24,15 @@ func getPostScript(document: JsonElement,
     while ptr < end {
         if ptr[0] == .parenOpen {
             if let string = getString(document: document,
-                                      id: -1,
-                                      generation: -1, &ptr, start, end) {
+                                      id: id,
+                                      generation: generation, &ptr, start, end) {
+                strings.append(value: string)
+            }
+        }
+        if ptr[0] == .lessThan {
+            if let string = getHexstring(document: document,
+                                         id: id,
+                                         generation: generation, &ptr, start, end) {
                 strings.append(value: string)
             }
         }

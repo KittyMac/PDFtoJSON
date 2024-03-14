@@ -64,6 +64,8 @@ func getStream(document: JsonElement,
     }
     
     if let strings = getPostScript(document: document,
+                                   id: -1,
+                                   generation: -1,
                                    streamContent) {
         streamInfo.set(key: "__strings", value: strings)
     }
