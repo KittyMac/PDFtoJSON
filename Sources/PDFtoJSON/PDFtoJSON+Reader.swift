@@ -100,7 +100,10 @@ extension PDFtoJSON {
             // check for encryption
             guard let trailer = document[element: "trailer"] else { return ("document is missing trailer", nil) }
             if let encryptRef = trailer[element: "Encrypt"],
-               let encrypt = reify(document: document, reference: encryptRef, start, end) {
+               let encrypt = reify(document: document,
+                                   reference: encryptRef,
+                                   parentInfo: JsonElement.null(),
+                                   start, end) {
                 
                 if let error = generateKeys(document: document,
                                             encrypt: encrypt) {
@@ -116,7 +119,7 @@ extension PDFtoJSON {
                 _ = reify(document: document,
                           id: objectId,
                           parentInfo: JsonElement.null(),
-                        start, end)
+                          start, end)
             }
                         
             // Now that we have the xref table, parse needed info

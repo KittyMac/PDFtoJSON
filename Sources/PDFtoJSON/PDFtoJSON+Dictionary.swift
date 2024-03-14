@@ -26,11 +26,13 @@ func getDictionary(document: JsonElement,
         
         guard let titleObject = getObject(document: document,
                                           id: id,
-                                          generation: generation, &ptr, start, end) else { break }
+                                          generation: generation,
+                                          &ptr, start, end) else { break }
         guard let titleString = titleObject.halfHitchValue else { break }
         guard let valueObject = getObject(document: document,
                                           id: id,
-                                          generation: generation, &ptr, start, end) else { break }
+                                          generation: generation,
+                                          &ptr, start, end) else { break }
         
         results.set(key: titleString, value: valueObject)
     }
@@ -40,9 +42,23 @@ func getDictionary(document: JsonElement,
         let documentFonts = document[element: "fonts"] ?? ^[:]
         for (key, font) in fonts.iterWalking {
             documentFonts.set(key: key,
-                              value: reify(document: document, font: font, start, end))
+                              value: reify(document: document,
+                                           font: font,
+                                           start, end))
         }
         document.set(key: "fonts", value: documentFonts)
+    }
+    
+    if let type = results[hitch: "Type"] {
+        if type == "Page" {
+            let documentPages = document[element: "pages"] ?? ^[]
+                        
+            documentPages.append(value: reify(document: document,
+                                              page: results,
+                                              start, end))
+            
+            document.set(key: "pages", value: documentPages)
+        }
     }
     
     

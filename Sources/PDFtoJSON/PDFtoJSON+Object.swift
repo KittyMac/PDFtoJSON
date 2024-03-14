@@ -117,7 +117,8 @@ func getObject(document: JsonElement,
            ptr[1] == .lessThan {
             guard let dictionary = getDictionary(document: document,
                                                  id: id,
-                                                 generation: generation, &ptr, start, end) else { return fail("failed to get dictionary when expected") }
+                                                 generation: generation,
+                                                 &ptr, start, end) else { return fail("failed to get dictionary when expected") }
             
             // a dictionary can be followed by a steam object; the dictionary
             // is necessary to parse the stream. Therefor we need to skip
@@ -138,7 +139,8 @@ func getObject(document: JsonElement,
                                  id: id,
                                  generation: generation,
                                  streamInfo: dictionary,
-                                 parentInfo: parentInfo, &ptr, start, end)
+                                 parentInfo: parentInfo,
+                                 &ptr, start, end)
             }
             
             return dictionary

@@ -29,17 +29,12 @@ func getStream(document: JsonElement,
     guard ptr[0] == .lineFeed else { return fail("stream does not have a newline") }
     ptr += 1
     
-    guard let lengthObj = reify(document: document, reference: streamInfo[element: "Length"], start, end) else { return fail("failed to reify length") }
+    guard let lengthObj = reify(document: document,
+                                reference: streamInfo[element: "Length"],
+                                parentInfo: parentInfo,
+                                start, end) else { return fail("failed to reify length") }
     guard let length = lengthObj.intValue else { return fail("failed to get stream length") }
-    
-    /*
-    // Length1 is a hint as to the size of the uncompressed data
-    var length1: Int? = nil
-    if let length1Obj = reify(document: document, reference: streamInfo[element: "Length1"], start, end) {
-        length1 = length1Obj.intValue
-    }
-    */
-    
+        
     var streamContent = HalfHitch(sourceObject: nil,
                                   raw: ptr,
                                   count: length,
@@ -73,7 +68,7 @@ func getStream(document: JsonElement,
         streamInfo.set(key: "content", value: content)
         //streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     } else {
-        streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+        //streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     }
     
     /*

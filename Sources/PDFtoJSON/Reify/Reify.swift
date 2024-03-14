@@ -5,6 +5,7 @@ import Hitch
 @inlinable
 func reify(document: JsonElement,
            reference: JsonElement?,
+           parentInfo: JsonElement,
            _ start: UnsafePointer<UInt8>,
            _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard let reference = reference else { return nil }
@@ -51,12 +52,60 @@ func reify(document: JsonElement,
            font: JsonElement?,
            _ start: UnsafePointer<UInt8>,
            _ end: UnsafePointer<UInt8>) -> JsonElement? {
-    guard let font = reify(document: document, reference: font, start, end) else { return font }
+    guard let font = reify(document: document,
+                           reference: font,
+                           parentInfo: document,
+                           start, end) else { return font }
     
-    if let toUnicode = reify(document: document, reference: font[element: "ToUnicode"], start, end) {
+    if let toUnicode = reify(document: document,
+                             reference: font[element: "ToUnicode"],
+                             parentInfo: font,
+                             start, end) {
         font.set(key: "ToUnicode",
                  value: toUnicode)
     }
     
     return font
+}
+
+@inlinable
+func reify(document: JsonElement,
+           page: JsonElement?,
+           _ start: UnsafePointer<UInt8>,
+           _ end: UnsafePointer<UInt8>) -> JsonElement? {
+    guard let page = reify(document: document,
+                           reference: page,
+                           parentInfo: document,
+                           start, end) else { return page }
+    
+    // TODO: what we really want to do it extract strings and
+    // put it into a new page object based on the contents
+    let textContent = ^[]
+    let width = page[element: "MediaBox"]?[int: 2] ?? 0
+    let height = page[element: "MediaBox"]?[int: 3] ?? 0
+    
+    // Force resources to be loaded (to ensure things
+    // like fonts are loaded before we parse content)
+    _ = reify(document: document,
+              reference: page[element: "Resources"],
+              parentInfo: page,
+              start, end)
+    
+    // Load the contents
+    if let contents = reify(document: document,
+                            reference: page[element: "Contents"],
+                            parentInfo: page,
+                            start, end),
+       let texts = contents[element: "content"],
+       texts.type == .array {
+        for text in texts.iterValues {
+            textContent.append(value: text)
+        }
+    }
+    
+    return ^[
+        "text": textContent,
+        "width": width,
+        "height": height
+    ]
 }
