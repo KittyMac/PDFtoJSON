@@ -78,6 +78,21 @@ func getObject(document: JsonElement,
                _ ptr: inout UnsafePointer<UInt8>,
                _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
+    return getObject(document: document,
+                     id: id,
+                     generation: generation,
+                     parentInfo: JsonElement.null(),
+                     &ptr, start, end)
+}
+
+@inlinable
+func getObject(document: JsonElement,
+               id: Int,
+               generation: Int,
+               parentInfo: JsonElement,
+               _ ptr: inout UnsafePointer<UInt8>,
+               _ start: UnsafePointer<UInt8>,
+               _ end: UnsafePointer<UInt8>) -> JsonElement? {
     while ptr < end {
         guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
         
@@ -122,7 +137,8 @@ func getObject(document: JsonElement,
                 return getStream(document: document,
                                  id: id,
                                  generation: generation,
-                                 streamInfo: dictionary, &ptr, start, end)
+                                 streamInfo: dictionary,
+                                 parentInfo: parentInfo, &ptr, start, end)
             }
             
             return dictionary

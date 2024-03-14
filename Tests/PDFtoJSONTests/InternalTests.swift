@@ -222,7 +222,25 @@ final class InternalTests: XCTestCase {
                                  id: 0,
                                  generation: 0, &ptr, ptr, end)?.description, #"{"id":9,"generation":0,"value":{"Kids":[{"id":10,"generation":0}],"Type":"Pages","Count":1,"ITXT":"2.1.7"}}"#)
     }
-
+    
+    func testParseDictionary7() {
+        let pdf: Hitch = """
+        <</XObject <</Im0 5 0 R
+        /Im1 18 0 R
+        >>
+        /Font <</F2 13 0 R
+        /F1 8 0 R
+        /F3 21 0 R
+        >>
+        /ProcSet [ /PDF /Text ]
+        >>
+        """
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(document: ^[],
+                                 id: 0,
+                                 generation: 0, &ptr, ptr, end)?.description, #"{"XObject":{"Im0":{"id":5,"generation":0},"Im1":{"id":18,"generation":0}},"Font":{"F2":{"id":13,"generation":0},"F1":{"id":8,"generation":0},"F3":{"id":21,"generation":0}},"ProcSet":["PDF","Text"]}"#)
+    }
     
     // MARK: - Object Definitions
     func testParseObjectDefinition0() {

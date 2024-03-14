@@ -113,7 +113,10 @@ extension PDFtoJSON {
             guard let xref = document[element: "xref"] else { return ("xref is missing", nil) }
             for objectIdString in xref.iterKeys {
                 guard let objectId = objectIdString.toInt() else { return ("xref key is not an objectId", nil) }
-                _ = reify(document: document, id: objectId, start, end)
+                _ = reify(document: document,
+                          id: objectId,
+                          parentInfo: JsonElement.null(),
+                        start, end)
             }
                         
             // Now that we have the xref table, parse needed info

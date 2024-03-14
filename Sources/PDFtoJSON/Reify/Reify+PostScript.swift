@@ -1,14 +1,18 @@
 import Foundation
 import Spanker
 import Hitch
-import SWCompression
 
 @inlinable
-func getPostScript(document: JsonElement,
-                   id: Int,
-                   generation: Int,
-                   _ hitch: HalfHitch) -> JsonElement? {
-    guard hitch.contains("g ") || hitch.contains("G ") else { return nil }
+func isPostScript(_ content: HalfHitch) -> Bool {
+    return content.contains(" Tf") || content.contains(" Tj")
+}
+
+@inlinable
+func reify(document: JsonElement,
+           id: Int,
+           generation: Int,
+           postScript content: HalfHitch) -> JsonElement? {
+    guard isPostScript(content) else { return nil }
     // Given a postscript string, extract all text renders and their positioning
     
     // TODO: actually handle the postscript movement and transformations. For now, just find
@@ -17,9 +21,9 @@ func getPostScript(document: JsonElement,
     let strings = JsonElement(unknown: [])
     
     
-    guard var ptr = hitch.raw() else { return fail("failed to get raw for postscript") }
+    guard var ptr = content.raw() else { return fail("failed to get raw for postscript") }
     let start = ptr
-    let end = ptr + hitch.count
+    let end = ptr + content.count
     
     while ptr < end {
         if ptr[0] == .parenOpen {

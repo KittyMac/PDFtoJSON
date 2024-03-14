@@ -8,6 +8,7 @@ func getStream(document: JsonElement,
                id: Int,
                generation: Int,
                streamInfo: JsonElement,
+               parentInfo: JsonElement,
                _ ptr: inout UnsafePointer<UInt8>,
                _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
@@ -63,14 +64,28 @@ func getStream(document: JsonElement,
         }
     }
     
+    if let content = reify(document: document,
+                           id: -1,
+                           generation: -1,
+                           objectInfo: streamInfo,
+                           parentInfo: parentInfo,
+                           unknown: streamContent) {
+        streamInfo.set(key: "content", value: content)
+        //streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+    } else {
+        streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+    }
+    
+    /*
+    if let contentJson = reify(
+    
     if let strings = getPostScript(document: document,
                                    id: -1,
                                    generation: -1,
                                    streamContent) {
         streamInfo.set(key: "__strings", value: strings)
-    }
+    }*/
     
-    streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     
     ptr += length
     

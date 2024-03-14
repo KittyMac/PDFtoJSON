@@ -9,16 +9,19 @@ func reify(document: JsonElement,
            _ end: UnsafePointer<UInt8>) -> JsonElement? {
     guard let reference = reference else { return nil }
     guard let id = reference[int: "id"] else { return reference }
-    return reify(document: document, id: id, start, end)
+    return reify(document: document,
+                 id: id,
+                 parentInfo: reference,
+                 start, end)
 }
-
 
 @inlinable
 func reify(document: JsonElement,
            id: Int,
+           parentInfo: JsonElement,
            _ start: UnsafePointer<UInt8>,
            _ end: UnsafePointer<UInt8>) -> JsonElement? {
-    guard let objects = document[element: "objects"] else { return fail("document has no objects") }
+    guard let objects = document[element: "objects"] else { return nil }
     
     let objectId = "{0}" << [id]
     guard let object = objects[element: objectId] else {
@@ -34,10 +37,26 @@ func reify(document: JsonElement,
         var objectPtr = start + offset
         guard let newObject = getObject(document: document,
                                         id: id,
-                                        generation: generation, &objectPtr, start, end) else { return fail("failed to load xref object \(id)") }
+                                        generation: generation,
+                                        parentInfo: parentInfo, &objectPtr, start, end) else { return fail("failed to load xref object \(id)") }
         
         objects.set(key: objectId, value: newObject)
         return newObject[element: "value"]
     }
     return object[element: "value"]
+}
+
+@inlinable
+func reify(document: JsonElement,
+           font: JsonElement?,
+           _ start: UnsafePointer<UInt8>,
+           _ end: UnsafePointer<UInt8>) -> JsonElement? {
+    guard let font = reify(document: document, reference: font, start, end) else { return font }
+    
+    if let toUnicode = reify(document: document, reference: font[element: "ToUnicode"], start, end) {
+        font.set(key: "ToUnicode",
+                 value: toUnicode)
+    }
+    
+    return font
 }

@@ -35,5 +35,16 @@ func getDictionary(document: JsonElement,
         results.set(key: titleString, value: valueObject)
     }
     
+    // Recognize specific dictionaries and put them into a lookup table
+    if let fonts = results[element: "Font"] {
+        let documentFonts = document[element: "fonts"] ?? ^[:]
+        for (key, font) in fonts.iterWalking {
+            documentFonts.set(key: key,
+                              value: reify(document: document, font: font, start, end))
+        }
+        document.set(key: "fonts", value: documentFonts)
+    }
+    
+    
     return results
 }
