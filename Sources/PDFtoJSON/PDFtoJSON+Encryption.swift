@@ -193,10 +193,8 @@ func generateKeys(document: JsonElement,
     guard let userKey = encrypt[hitch: "U"] else { return "missing user key" }
     guard userKey.count >= 32 else { return "malformed user key" }
     
-    #if DEBUG
-    print("ownerKey[\(ownerKey.count)]: \(ownerKey.asHexString())")
-    print("userKey[\(userKey.count)]: \(userKey.asHexString())")
-    #endif
+    //print("ownerKey[\(ownerKey.count)]: \(ownerKey.asHexString())")
+    //print("userKey[\(userKey.count)]: \(userKey.asHexString())")
     
     guard let trailer = document[element: "trailer"] else { return "trailer missing" }
     guard let fileIdArray = trailer[element: "ID"] else { return "file id array missing" }
@@ -207,20 +205,16 @@ func generateKeys(document: JsonElement,
     let password = document[hitch: "password"]
     let paddedPassword = pad(password: password)
     
-    #if DEBUG
-    print("Trying: \(paddedPassword.asHexString())")
-    print("P: \(permissions)")
-    print("Fid[\(fileId.count)]: \(fileId.asHexString())")
-    #endif
+    //print("Trying: \(paddedPassword.asHexString())")
+    //print("P: \(permissions)")
+    //print("Fid[\(fileId.count)]: \(fileId.asHexString())")
     
     guard let userPad = try? makeOwnerKey(encryptionType: encryptionType,
                                           ownerPad: paddedPassword,
                                           userPad: ownerKey) else {
         return "failed to make padded user key"
     }
-    #if DEBUG
-    print("Upad[\(userPad.count)]: \(userPad.asHexString())")
-    #endif
+    //print("Upad[\(userPad.count)]: \(userPad.asHexString())")
 
     guard let fileKey = try? makeFileKey(encryptionType: encryptionType,
                                          permissions: permissions,
@@ -229,17 +223,13 @@ func generateKeys(document: JsonElement,
                                          ownerKey: ownerKey) else {
         return "failed to make file key"
     }
-    #if DEBUG
-    print("Fown[\(fileKey.count)]: \(fileKey.asHexString())")
-    #endif
+    //print("Fown[\(fileKey.count)]: \(fileKey.asHexString())")
     
     guard let ownUserKey = try? makeUserKey(fileId: fileId) else {
         return "failed to make own user key"
     }
-    #if DEBUG
-    print("U[\(userKey.count)]: \(userKey.asHexString())")
-    print("Uown[\(ownUserKey.count)]: \(ownUserKey.asHexString())")
-    #endif
+    //print("U[\(userKey.count)]: \(userKey.asHexString())")
+    //print("Uown[\(ownUserKey.count)]: \(ownUserKey.asHexString())")
     
     // Check if we have a match
     if userKey == ownerKey {
@@ -257,9 +247,7 @@ func generateKeys(document: JsonElement,
                                          ownerKey: ownerKey) else {
         return "failed to make file key"
     }
-    #if DEBUG
-    print("Fuse[\(fileKey.count)]: \(fileKey.asHexString())")
-    #endif
+    //print("Fuse[\(fileKey.count)]: \(fileKey.asHexString())")
 
     guard let ownUserKey = try? makeUserKey(fileId: fileId) else {
         return "failed to make own user key"
@@ -271,10 +259,8 @@ func generateKeys(document: JsonElement,
         return "failed to decrypt user key"
     }
     
-    #if DEBUG
-    print("Uuse[\(userKey.count)]: \(userKey.asHexString())")
-    print("Updf[\(pdfUserKey.count)]: \(pdfUserKey.asHexString())")
-    #endif
+    //print("Uuse[\(userKey.count)]: \(userKey.asHexString())")
+    //print("Updf[\(pdfUserKey.count)]: \(pdfUserKey.asHexString())")
     
     if pdfUserKey == paddedPassword || ownUserKey.substring(0, 16) == pdfUserKey.substring(0, 16) {
         document.set(key: "encryptionType", value: encryptionType)
