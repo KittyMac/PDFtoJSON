@@ -3,7 +3,6 @@ import Spanker
 import Hitch
 import SWCompression
 
-@inlinable
 func getStream(document: JsonElement,
                id: Int,
                generation: Int,

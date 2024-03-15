@@ -2,7 +2,6 @@ import Foundation
 import Spanker
 import Hitch
 
-@inlinable
 func getDictionary(document: JsonElement,
                    id: Int,
                    generation: Int,

@@ -2,7 +2,6 @@ import Foundation
 import Spanker
 import Hitch
 
-@inlinable
 func getString(document: JsonElement,
                id: Int,
                generation: Int,
@@ -16,7 +15,6 @@ func getString(document: JsonElement,
                      ptr + value.count)
 }
 
-@inlinable
 func getString(document: JsonElement,
                id: Int,
                generation: Int,

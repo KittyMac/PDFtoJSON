@@ -16,31 +16,6 @@ let defaultPasswordPadding: [UInt8] = [
     0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a
 ]
 
-public extension UInt8 {
-    @inlinable
-    func dtoh() -> UInt8 {
-        switch self {
-        case 0: return .zero
-        case 1: return .one
-        case 2: return .two
-        case 3: return .three
-        case 4: return .four
-        case 5: return .five
-        case 6: return .six
-        case 7: return .seven
-        case 8: return .eight
-        case 9: return .nine
-        case 10: return .A
-        case 11: return .B
-        case 12: return .C
-        case 13: return .D
-        case 14: return .E
-        case 15: return .F
-        default: return .questionMark
-        }
-    }
-}
-
 extension Hitchable {
     @usableFromInline
     func asArray() -> Array<UInt8> {
@@ -55,15 +30,14 @@ extension Hitchable {
         var ptr = start
         let end = start + count
         while ptr < end {
-            output.append((ptr[0] >> 4).dtoh())
-            output.append((ptr[0] & 0x0F).dtoh())
+            output.append(hex2((ptr[0] >> 4)))
+            output.append(hex2(ptr[0] & 0x0F))
             ptr += 1
         }
         return output
     }
 }
 
-@inlinable
 func decrypt(document: JsonElement,
              id: Int,
              generation: Int,
@@ -136,7 +110,6 @@ func decrypt(document: JsonElement,
     return (nil, content)
 }
 
-@inlinable
 func generateKeys(document: JsonElement,
                   encrypt: JsonElement) -> String? {
     guard document[hitch: "fileKey"] == nil else { return nil }

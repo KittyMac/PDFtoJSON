@@ -22,7 +22,6 @@ import Hitch
 // 12 0 R
 
 public extension UInt8 {
-    @inlinable
     func isDelimiter() -> Bool {
         switch self {
         case .space, .newLine, .carriageReturn, .tab, .closeBrace, .openBrace, .greaterThan, .lessThan, .forwardSlash, .parenOpen, .parenClose:
@@ -71,7 +70,6 @@ func peekParts(n: Int,
     return parts
 }
 
-@inlinable
 func getObject(document: JsonElement,
                id: Int,
                generation: Int,
@@ -85,7 +83,6 @@ func getObject(document: JsonElement,
                      &ptr, start, end)
 }
 
-@inlinable
 func getObject(document: JsonElement,
                id: Int,
                generation: Int,

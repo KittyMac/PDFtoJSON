@@ -3,12 +3,11 @@ import Spanker
 import Hitch
 
 extension HalfHitch {
-    @inlinable
+    
     func isPrintable() -> Bool {
         return isUTF8()
     }
     
-    @inlinable
     func isUTF8() -> Bool {
         guard let data = raw() else { return false }
         var index = 0
@@ -54,12 +53,11 @@ extension HalfHitch {
 }
 
 extension Hitch {
-    @inlinable
+    
     func isPrintable() -> Bool {
         return isUTF8()
     }
     
-    @inlinable
     func isUTF8() -> Bool {
         guard let data = raw() else { return false }
         var index = 0
@@ -104,7 +102,6 @@ extension Hitch {
     }
 }
 
-@inlinable
 func getHexstring(document: JsonElement,
                   id: Int,
                   generation: Int,
@@ -118,7 +115,6 @@ func getHexstring(document: JsonElement,
                         ptr + value.count)
 }
 
-@inlinable
 func getHexstring(document: JsonElement,
                   id: Int,
                   generation: Int,
@@ -164,7 +160,6 @@ func getHexstring(document: JsonElement,
     return JsonElement(unknown: newString.base64Encoded())
 }
 
-@inlinable
 func getHexstringRaw(_ ptr: inout UnsafePointer<UInt8>,
                      _ start: UnsafePointer<UInt8>,
                      _ end: UnsafePointer<UInt8>) -> HalfHitch? {

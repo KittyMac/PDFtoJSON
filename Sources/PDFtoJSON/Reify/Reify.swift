@@ -2,7 +2,6 @@ import Foundation
 import Spanker
 import Hitch
 
-@inlinable
 func reify(document: JsonElement,
            reference: JsonElement?,
            parentInfo: JsonElement,
@@ -16,7 +15,6 @@ func reify(document: JsonElement,
                  start, end)
 }
 
-@inlinable
 func reify(document: JsonElement,
            id: Int,
            parentInfo: JsonElement,
@@ -47,7 +45,6 @@ func reify(document: JsonElement,
     return object[element: "value"]
 }
 
-@inlinable
 func reify(document: JsonElement,
            font: JsonElement?,
            _ start: UnsafePointer<UInt8>,
@@ -68,7 +65,6 @@ func reify(document: JsonElement,
     return font
 }
 
-@inlinable
 func reify(document: JsonElement,
            page: JsonElement?,
            _ start: UnsafePointer<UInt8>,

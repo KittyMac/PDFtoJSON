@@ -2,12 +2,10 @@ import Foundation
 import Spanker
 import Hitch
 
-@inlinable
 func isPostScript(_ content: HalfHitch) -> Bool {
     return content.contains(" Tf") || content.contains(" Tj")
 }
 
-@inlinable
 func reify(document: JsonElement,
            id: Int,
            generation: Int,

@@ -2,7 +2,6 @@ import Foundation
 import Spanker
 import Hitch
 
-@inlinable
 func getXrefTable(document: JsonElement,
                   _ ptr: inout UnsafePointer<UInt8>,
                   _ start: UnsafePointer<UInt8>,

@@ -2,7 +2,6 @@ import Foundation
 import Spanker
 import Hitch
 
-@inlinable
 func isCMap(_ content: HalfHitch) -> Bool {
     return content.contains("/CMapName") && (
         content.contains("beginbfchar") || 
@@ -10,7 +9,6 @@ func isCMap(_ content: HalfHitch) -> Bool {
     )
 }
 
-@inlinable
 func reify(document: JsonElement,
            id: Int,
            generation: Int,
@@ -42,7 +40,6 @@ func reify(document: JsonElement,
     ]
 }
 
-@inlinable
 func beginbfchar(map: JsonElement,
                  _ ptr: inout UnsafePointer<UInt8>,
                  _ start: UnsafePointer<UInt8>,
@@ -64,7 +61,6 @@ func beginbfchar(map: JsonElement,
     }
 }
 
-@inlinable
 func beginbfrange(map: JsonElement,
                   _ ptr: inout UnsafePointer<UInt8>,
                   _ start: UnsafePointer<UInt8>,
