@@ -81,8 +81,8 @@ func reify(document: JsonElement,
     // TODO: what we really want to do it extract strings and
     // put it into a new page object based on the contents
     let textContent = ^[]
-    let width = page[element: "MediaBox"]?[int: 2] ?? 0
-    let height = page[element: "MediaBox"]?[int: 3] ?? 0
+    let width = page[element: "MediaBox"]?[double: 2] ?? 0
+    let height = page[element: "MediaBox"]?[double: 3] ?? 0
     
     // Force resources to be loaded (to ensure things
     // like fonts are loaded before we parse content)
@@ -92,14 +92,27 @@ func reify(document: JsonElement,
               start, end)
     
     // Load the contents
-    if let contents = reify(document: document,
-                            reference: page[element: "Contents"],
-                            parentInfo: page,
-                            start, end),
-       let texts = contents[element: "content"],
-       texts.type == .array {
-        for text in texts.iterValues {
-            textContent.append(value: text)
+    if let pageContents = page[element: "Contents"] {
+        var pageContentsArray: [JsonElement] = []
+        if pageContents.type != .array {
+            pageContentsArray.append(pageContents)
+        } else {
+            for pageContent in pageContents.iterValues {
+                pageContentsArray.append(pageContent)
+            }
+        }
+        
+        for pageContent in pageContentsArray {
+            if let contents = reify(document: document,
+                                    reference: pageContent,
+                                    parentInfo: page,
+                                    start, end),
+               let texts = contents[element: "content"],
+               texts.type == .array {
+                for text in texts.iterValues {
+                    textContent.append(value: text)
+                }
+            }
         }
     }
     

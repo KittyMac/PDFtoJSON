@@ -18,9 +18,9 @@ func reify(document: JsonElement,
     // TODO: actually handle the postscript movement and transformations. For now, just find
     // all strings and output them...
     
-    print("=======================")
-    print(content)
-    print("=======================")
+    //print("=======================")
+    //print(content)
+    //print("=======================")
     
     guard var ptr = content.raw() else { return fail("failed to get raw for postscript") }
     let start = ptr
@@ -47,13 +47,16 @@ func reify(document: JsonElement,
     var matrixStack: [Matrix3x3] = []
     var matrix = Matrix3x3()
     
+    let documentFonts = document[element: "fonts"] ?? ^[:]
+    var font: JsonElement? = nil
+    
     while ptr < end {
         guard ptr[0].isWhitspace() == false else {
             ptr += 1
             continue
         }
         
-        if ptr[0] == .openBrace || ptr[0] == .lessThan || ptr[0] == .parenOpen,
+        if ptr[0] == .openBrace || ptr[0] == .parenOpen || ptr[0] == .forwardSlash,
            let object = getObject(document: document,
                                   id: id,
                                   generation: generation,
@@ -67,6 +70,35 @@ func reify(document: JsonElement,
                 if let string = item.halfHitchValue {
                     stack.append(string)
                 }
+            }
+            continue
+        }
+        
+        if ptr[0] == .lessThan,
+           let string = getHexstringRaw(&ptr, start, end) {
+            if let font = font,
+               let cmap = font[element: "ToUnicode"]?[element: "content"]?[element: "cmap"],
+               string.count % 4 == 0 {
+                let convertedString = Hitch(capacity: string.count)
+                for idx in stride(from: 0, to: string.count, by: 4) {
+                    let code = HalfHitch(source: string, from: idx, to: idx + 4)
+                    if let unicode = cmap[halfhitch: code] {
+                        let value = toUnicode(unicode)
+                        switch value {
+                        case 0: break
+                        case 160: convertedString.append(.space)
+                        default:
+                            if let scalar = UnicodeScalar(value) {
+                                for v in Character(scalar).utf8 {
+                                    convertedString.append(v)
+                                }
+                            }
+                        }
+                    }
+                }
+                stack.append(convertedString.halfhitch())
+            } else {
+                stack.append(string)
             }
             continue
         }
@@ -159,6 +191,14 @@ func reify(document: JsonElement,
             }
             ptr += value.count
             break
+        case "Tf":
+            // /F1 12 Tf
+            if stack.count >= 2 {
+                let _ = stack.removeLast()
+                let name = stack.removeLast()
+                font = documentFonts[element: name]
+            }
+            ptr += value.count
         default:
             ptr += value.count
             stack.append(value)
@@ -168,6 +208,10 @@ func reify(document: JsonElement,
     // remove empty strings
     strings = strings.filter {
         ($0[element: "text"]?.halfHitchValue?.count ?? 0) > 0
+    }
+    
+    strings = strings.filter {
+        $0[element: "text"]?.halfHitchValue != " "
     }
     
     // sort top to bottom, left to right

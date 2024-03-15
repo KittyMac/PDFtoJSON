@@ -314,6 +314,10 @@ final class InternalTests: XCTestCase {
     
     // MARK: - PostScript
     
+    func testToUnicode() {
+        XCTAssertEqual(toUnicode("006F"), 111)
+    }
+    
     func testPostScript0() {
         let postscript: HalfHitch = """
         q Q q 12.49999 756.7543 587 23 re W n /Cs1 cs 1 sc 12.49999 779.7543 m 599.5

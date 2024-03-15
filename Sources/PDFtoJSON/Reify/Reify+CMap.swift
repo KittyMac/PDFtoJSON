@@ -17,28 +17,28 @@ func reify(document: JsonElement,
            cMap content: HalfHitch) -> JsonElement? {
     guard isCMap(content) else { return nil }
 
-    let map = JsonElement(unknown: [:])
+    let cmap = JsonElement(unknown: [:])
     
     if let start = content.raw() {
         
         if let idx = content.firstIndex(of: "beginbfchar") {
             var ptr = start + idx + 11
             let end = start + content.count
-            beginbfchar(map: map,
+            beginbfchar(map: cmap,
                         &ptr, start, end)
         }
         
         if let idx = content.firstIndex(of: "beginbfrange") {
             var ptr = start + idx + 12
             let end = start + content.count
-            beginbfrange(map: map,
+            beginbfrange(map: cmap,
                          &ptr, start, end)
         }
         
     }
     
     return ^[
-        "map": map
+        "cmap": cmap
     ]
 }
 

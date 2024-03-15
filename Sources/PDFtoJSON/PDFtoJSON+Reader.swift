@@ -47,28 +47,28 @@ func fromUnicode(_ num: UInt16) -> Hitch {
 
 @inlinable
 func toUnicode(_ ptr: UnsafePointer<UInt8>) -> UInt16 {
-    let a: UInt32 = decimal(ptr[0]) ?? 0
-    let b: UInt32 = decimal(ptr[1]) ?? 0
-    let c: UInt32 = decimal(ptr[2]) ?? 0
-    let d: UInt32 = decimal(ptr[3]) ?? 0
+    let a: UInt32 = hex(ptr[0]) ?? 0
+    let b: UInt32 = hex(ptr[1]) ?? 0
+    let c: UInt32 = hex(ptr[2]) ?? 0
+    let d: UInt32 = hex(ptr[3]) ?? 0
     return UInt16((a << 12) | (b << 8) | (c << 4) | d)
 }
 
 @inlinable
 func toUnicode(_ ptr: Hitch) -> UInt16 {
-    let a: UInt32 = decimal(ptr[0]) ?? 0
-    let b: UInt32 = decimal(ptr[1]) ?? 0
-    let c: UInt32 = decimal(ptr[2]) ?? 0
-    let d: UInt32 = decimal(ptr[3]) ?? 0
+    let a: UInt32 = hex(ptr[0]) ?? 0
+    let b: UInt32 = hex(ptr[1]) ?? 0
+    let c: UInt32 = hex(ptr[2]) ?? 0
+    let d: UInt32 = hex(ptr[3]) ?? 0
     return UInt16((a << 12) | (b << 8) | (c << 4) | d)
 }
 
 @inlinable
 func toUnicode(_ ptr: HalfHitch) -> UInt16 {
-    let a: UInt32 = decimal(ptr[0]) ?? 0
-    let b: UInt32 = decimal(ptr[1]) ?? 0
-    let c: UInt32 = decimal(ptr[2]) ?? 0
-    let d: UInt32 = decimal(ptr[3]) ?? 0
+    let a: UInt32 = hex(ptr[0]) ?? 0
+    let b: UInt32 = hex(ptr[1]) ?? 0
+    let c: UInt32 = hex(ptr[2]) ?? 0
+    let d: UInt32 = hex(ptr[3]) ?? 0
     return UInt16((a << 12) | (b << 8) | (c << 4) | d)
 }
 
