@@ -24,6 +24,54 @@ func getLine(_ ptr: inout UnsafePointer<UInt8>,
     return HalfHitch(sourceObject: nil, raw: start, count: ptr - start, from: 0, to: ptr - start)
 }
 
+@inlinable
+func skipWhitespace(_ ptr: inout UnsafePointer<UInt8>,
+                    _ start: UnsafePointer<UInt8>,
+                    _ end: UnsafePointer<UInt8>) {
+    while ptr < end {
+        guard ptr[0].isWhitspace() else { break }
+        ptr += 1
+    }
+}
+
+@inlinable
+func fromUnicode(_ num: UInt16) -> Hitch {
+    let hitch = Hitch(capacity: 4)
+    let num32 = UInt32(num)
+    hitch.append(hex2((num32 >> 12) & 0xF))
+    hitch.append(hex2((num32 >> 8) & 0xF))
+    hitch.append(hex2((num32 >> 4) & 0xF))
+    hitch.append(hex2((num32 >> 0) & 0xF))
+    return hitch
+}
+
+@inlinable
+func toUnicode(_ ptr: UnsafePointer<UInt8>) -> UInt16 {
+    let a: UInt32 = decimal(ptr[0]) ?? 0
+    let b: UInt32 = decimal(ptr[1]) ?? 0
+    let c: UInt32 = decimal(ptr[2]) ?? 0
+    let d: UInt32 = decimal(ptr[3]) ?? 0
+    return UInt16((a << 12) | (b << 8) | (c << 4) | d)
+}
+
+@inlinable
+func toUnicode(_ ptr: Hitch) -> UInt16 {
+    let a: UInt32 = decimal(ptr[0]) ?? 0
+    let b: UInt32 = decimal(ptr[1]) ?? 0
+    let c: UInt32 = decimal(ptr[2]) ?? 0
+    let d: UInt32 = decimal(ptr[3]) ?? 0
+    return UInt16((a << 12) | (b << 8) | (c << 4) | d)
+}
+
+@inlinable
+func toUnicode(_ ptr: HalfHitch) -> UInt16 {
+    let a: UInt32 = decimal(ptr[0]) ?? 0
+    let b: UInt32 = decimal(ptr[1]) ?? 0
+    let c: UInt32 = decimal(ptr[2]) ?? 0
+    let d: UInt32 = decimal(ptr[3]) ?? 0
+    return UInt16((a << 12) | (b << 8) | (c << 4) | d)
+}
+
 extension PDFtoJSON {
     
     @usableFromInline

@@ -141,8 +141,8 @@ func getHexstring(document: JsonElement,
     // run through it again and convert from hex to binary
     var ptr2 = start + 1
     while ptr2 < ptr {
-        let hex0 = ptr2[0].htod()
-        let hex1 = ptr2+1 < ptr ? ptr2[1].htod() : 0
+        let hex0: UInt8 = hex(ptr2[0]) ?? 0
+        let hex1: UInt8 = ptr2+1 < ptr ? hex(ptr2[1]) ?? 0 : 0
                 
         let value = hex0 &* 16 &+ hex1
         string.append(value)
@@ -162,4 +162,24 @@ func getHexstring(document: JsonElement,
     }
     
     return JsonElement(unknown: newString.base64Encoded())
+}
+
+@inlinable
+func getHexstringRaw(_ ptr: inout UnsafePointer<UInt8>,
+                     _ start: UnsafePointer<UInt8>,
+                     _ end: UnsafePointer<UInt8>) -> HalfHitch? {
+    guard ptr[0] == .lessThan else { return nil }
+    
+    let start = ptr
+    
+    // find the whole string content first to find the capacity
+    ptr += 1
+    while ptr < end {
+        guard ptr[0] != .greaterThan else { break }
+        ptr += 1
+    }
+    
+    ptr += 1
+    
+    return Hitch(bytes: start+1, offset: 0, count: ptr - (start + 2)).halfhitch()
 }

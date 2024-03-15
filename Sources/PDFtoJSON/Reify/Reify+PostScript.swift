@@ -105,6 +105,20 @@ func reify(document: JsonElement,
             }
             ptr += value.count
             break
+        case "Td":
+            // 5 0 Td
+            if stack.count >= 2 {
+                let f = stack.removeLast().toDouble() ?? 0.0
+                let e = stack.removeLast().toDouble() ?? 0.0
+                
+                let m = Matrix3x3(m11: 1, m12: 0, m13: e,
+                                  m21: 0, m22: 1, m23: f,
+                                  m31: 0, m32: 0, m33: 1)
+
+                matrix = matrix.multiply(by: m)
+            }
+            ptr += value.count
+            break
         case "Tm":
             // 11 0 0 11 8 19 Tm
             if stack.count >= 6 {

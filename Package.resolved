@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/KittyMac/Hitch.git",
       "state" : {
-        "revision" : "3f3703385df42f2dbe28dc69ac4afe1938399b82",
-        "version" : "0.4.124"
+        "revision" : "b80898f91efe103980766313e536516b8846f23d",
+        "version" : "0.4.127"
       }
     },
     {
