@@ -38,6 +38,8 @@ func reify(document: JsonElement,
     // ' (move to next line and show text): example needed...
     // " (set word spacing, mvoe to next line and show text): example needed...
     
+    var textBlock: [JsonElement] = []
+    
     var strings: [JsonElement] = []
     
     var stack: [HalfHitch] = []
@@ -109,6 +111,18 @@ func reify(document: JsonElement,
         }
         
         switch value {
+        case "BT":
+            ptr += value.count
+            break
+        case "ET":
+            let combined = combineIfSameLine(texts: textBlock)
+            for part in combined.iterValues {
+                strings.append(part)
+            }
+            
+            textBlock = []
+            ptr += value.count
+            break
         case "q":
             docMatrixStack.append(docMatrix)
             ptr += value.count
@@ -176,7 +190,7 @@ func reify(document: JsonElement,
                 text.set(key: "x", value: Int(x))
                 text.set(key: "y", value: Int(floor(y / 4) * 4))
                 text.set(key: "text", value: stack.removeLast())
-                strings.append(text)
+                textBlock.append(text)
             }
             ptr += value.count
             break
@@ -187,7 +201,7 @@ func reify(document: JsonElement,
                 text.set(key: "x", value: Int(x))
                 text.set(key: "y", value: Int(floor(y / 4) * 4))
                 text.set(key: "text", value: stack.removeLast())
-                strings.append(text)
+                textBlock.append(text)
             }
             ptr += value.count
             break
@@ -228,6 +242,10 @@ func reify(document: JsonElement,
     
     // print(strings)
     
+    return JsonElement(unknown: strings)
+}
+
+fileprivate func combineIfSameLine(texts: [JsonElement]) -> JsonElement {
     // Combine potentially broken up strings into words
     // (ie we have pdfs which place each letter individually,
     // it would be ideal to combin e these correctly)
@@ -235,12 +253,17 @@ func reify(document: JsonElement,
 
     var yOffset = 0
     var currentLine: [JsonElement] = []
-    for string in strings {
-        let y = string[int: "y"] ?? 0
+    for text in texts {
+        let y = text[int: "y"] ?? 0
         //let x = string[int: "y"] ?? 0
 
         if y != yOffset {
             if currentLine.isEmpty == false {
+                
+                // TODO: determine the width of a space and inject
+                // the appropriate whitespace given the different
+                // in x positioning
+                
                 combinedStrings.append(
                     combine(texts: currentLine)
                 )
@@ -250,7 +273,7 @@ func reify(document: JsonElement,
             yOffset = y
         }
         
-        currentLine.append(string)
+        currentLine.append(text)
     }
     
     if currentLine.isEmpty == false {
