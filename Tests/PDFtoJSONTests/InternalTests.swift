@@ -325,7 +325,7 @@ final class InternalTests: XCTestCase {
         cm BT 0.0001 Tc 11 0 0 11 8 19 Tm /TT1 1 Tf (hello world) Tj ET Q Q
         """
         XCTAssertEqual(reify(document: ^[], id: -1, generation: -1, postScript: postscript)?.description,
-                       #"[{"x":20.49999,"y":760.0,"text":"hello world"}]"#)
+                       #"[{"x":20,"y":760,"text":"hello world"}]"#)
     }
     
     func testPostScript1() {

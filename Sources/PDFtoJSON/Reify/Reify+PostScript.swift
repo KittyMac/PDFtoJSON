@@ -16,9 +16,9 @@ func reify(document: JsonElement,
     // TODO: actually handle the postscript movement and transformations. For now, just find
     // all strings and output them...
     
-    //print("=======================")
-    //print(content)
-    //print("=======================")
+    // print("=======================")
+    // print(content)
+    // print("=======================")
     
     guard var ptr = content.raw() else { return fail("failed to get raw for postscript") }
     let start = ptr
@@ -42,8 +42,9 @@ func reify(document: JsonElement,
     
     var stack: [HalfHitch] = []
     
-    var matrixStack: [Matrix3x3] = []
-    var matrix = Matrix3x3()
+    var docMatrixStack: [Matrix3x3] = []
+    var docMatrix = Matrix3x3()
+    var textMatrix = Matrix3x3()
     
     let documentFonts = document[element: "fonts"] ?? ^[:]
     var font: JsonElement? = nil
@@ -84,6 +85,7 @@ func reify(document: JsonElement,
                         let value = toUnicode(unicode)
                         switch value {
                         case 0: break
+                        case 9: convertedString.append("    ")
                         case 160: convertedString.append(.space)
                         default:
                             if let scalar = UnicodeScalar(value) {
@@ -108,12 +110,12 @@ func reify(document: JsonElement,
         
         switch value {
         case "q":
-            matrixStack.append(matrix)
+            docMatrixStack.append(docMatrix)
             ptr += value.count
             break
         case "Q":
-            if matrixStack.isEmpty == false {
-                matrix = matrixStack.removeLast()
+            if docMatrixStack.isEmpty == false {
+                docMatrix = docMatrixStack.removeLast()
             }
             ptr += value.count
             break
@@ -131,7 +133,7 @@ func reify(document: JsonElement,
                                   m21: c, m22: d, m23: f,
                                   m31: 0, m32: 0, m33: 1)
                 
-                matrix = matrix.multiply(by: m)
+                docMatrix = docMatrix.multiply(by: m)
             }
             ptr += value.count
             break
@@ -145,7 +147,7 @@ func reify(document: JsonElement,
                                   m21: 0, m22: 1, m23: f,
                                   m31: 0, m32: 0, m33: 1)
 
-                matrix = matrix.multiply(by: m)
+                textMatrix = textMatrix.multiply(by: m)
             }
             ptr += value.count
             break
@@ -163,16 +165,16 @@ func reify(document: JsonElement,
                                   m21: c, m22: d, m23: f,
                                   m31: 0, m32: 0, m33: 1)
 
-                matrix = matrix.multiply(by: m)
+                textMatrix = m
             }
             ptr += value.count
             break
         case "Tj":
             if stack.isEmpty == false {
-                let (x, y) = matrix.transform(x: 0, y: 0)
+                let (x, y) = docMatrix.multiply(by: textMatrix).transform(x: 0, y: 0)
                 let text = ^[:]
-                text.set(key: "x", value: x)
-                text.set(key: "y", value: floor(y / 4) * 4)
+                text.set(key: "x", value: Int(x))
+                text.set(key: "y", value: Int(floor(y / 4) * 4))
                 text.set(key: "text", value: stack.removeLast())
                 strings.append(text)
             }
@@ -180,10 +182,10 @@ func reify(document: JsonElement,
             break
         case "TJ":
             if stack.isEmpty == false {
-                let (x, y) = matrix.transform(x: 0, y: 0)
+                let (x, y) = docMatrix.multiply(by: textMatrix).transform(x: 0, y: 0)
                 let text = ^[:]
-                text.set(key: "x", value: x)
-                text.set(key: "y", value: floor(y / 4) * 4)
+                text.set(key: "x", value: Int(x))
+                text.set(key: "y", value: Int(floor(y / 4) * 4))
                 text.set(key: "text", value: stack.removeLast())
                 strings.append(text)
             }
@@ -217,12 +219,63 @@ func reify(document: JsonElement,
         let y0 = $0[int: "y"] ?? 0
         let y1 = $1[int: "y"] ?? 0
         guard y0 == y1 else {
-            return y0 < y1
+            return y0 > y1
         }
         let x0 = $0[int: "x"] ?? 0
         let x1 = $1[int: "x"] ?? 0
         return x0 < x1
     }
     
-    return JsonElement(unknown: strings)
+    // print(strings)
+    
+    // Combine potentially broken up strings into words
+    // (ie we have pdfs which place each letter individually,
+    // it would be ideal to combin e these correctly)
+    var combinedStrings: [JsonElement] = []
+
+    var yOffset = 0
+    var currentLine: [JsonElement] = []
+    for string in strings {
+        let y = string[int: "y"] ?? 0
+        //let x = string[int: "y"] ?? 0
+
+        if y != yOffset {
+            if currentLine.isEmpty == false {
+                combinedStrings.append(
+                    combine(texts: currentLine)
+                )
+                currentLine = []
+            }
+            
+            yOffset = y
+        }
+        
+        currentLine.append(string)
+    }
+    
+    if currentLine.isEmpty == false {
+        combinedStrings.append(
+            combine(texts: currentLine)
+        )
+        currentLine = []
+    }
+    
+    return JsonElement(unknown: combinedStrings)
+}
+
+fileprivate func combine(texts: [JsonElement]) -> JsonElement {
+    // Combine everything in currentLine to one new string object
+    let lineY = texts[0][int: "y"] ?? 0
+    let lineX = texts[0][int: "x"] ?? 0
+    
+    let combined = Hitch(capacity: 1024)
+    for other in texts {
+        combined.append(other[halfhitch: "text"] ?? " ")
+    }
+    
+    let text = ^[:]
+    text.set(key: "x", value: lineX)
+    text.set(key: "y", value: lineY)
+    text.set(key: "text", value: combined.halfhitch())
+    return text
 }
