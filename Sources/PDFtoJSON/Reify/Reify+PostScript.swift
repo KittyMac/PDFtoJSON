@@ -6,6 +6,89 @@ func isPostScript(_ content: HalfHitch) -> Bool {
     return content.contains(" Tf") || content.contains(" Tj")
 }
 
+fileprivate func convertHexstring(font: JsonElement?,
+                                  _ ptr: inout UnsafePointer<UInt8>,
+                                  _ start: UnsafePointer<UInt8>,
+                                  _ end: UnsafePointer<UInt8>) -> [HalfHitch] {
+    guard let string = getHexstringRaw(&ptr, start, end) else { return [] }
+    var stack: [HalfHitch] = []
+    
+    if let font = font,
+       let cmap = font[element: "ToUnicode"]?[element: "content"]?[element: "cmap"],
+       string.count % 4 == 0 {
+        let convertedString = Hitch(capacity: string.count)
+        for idx in stride(from: 0, to: string.count, by: 4) {
+            let code = HalfHitch(source: string, from: idx, to: idx + 4).hitch().uppercase().halfhitch()
+            if let unicode = cmap[halfhitch: code] {
+                let value = toUnicode(unicode)
+                switch value {
+                case 0: break
+                case 9: convertedString.append("    ")
+                case 160: convertedString.append(.space)
+                default:
+                    if let scalar = UnicodeScalar(value) {
+                        for v in Character(scalar).utf8 {
+                            convertedString.append(v)
+                        }
+                    }
+                }
+            } else {
+                // print(cmap)
+                fatalError("cmap lookup failed: \(code)")
+            }
+        }
+        stack.append(convertedString.halfhitch())
+    } else {
+        stack.append(string)
+    }
+    
+    return stack
+}
+
+fileprivate func getPostScriptObject(font: JsonElement?,
+                                     _ ptr: inout UnsafePointer<UInt8>,
+                                     _ start: UnsafePointer<UInt8>,
+                                     _ end: UnsafePointer<UInt8>) -> [HalfHitch]? {
+    var stack: [HalfHitch] = []
+    
+    if ptr[0] == .parenOpen || ptr[0] == .forwardSlash,
+       let object = getObject(document: ^[],
+                              id: -1,
+                              generation: -1,
+                              &ptr, start, end) {
+        if let string = object.halfHitchValue {
+            stack.append(string)
+        }
+        return stack
+    }
+    
+    if ptr[0] == .lessThan {
+        let strings = convertHexstring(font: font,
+                                       &ptr, start, end)
+        stack.append(contentsOf: strings)
+        ptr += 1
+        return stack
+    }
+    
+    if ptr[0] == .openBrace {
+        ptr += 1
+        while ptr < end {
+            guard ptr[0] != .closeBrace else { break }
+            guard ptr[0].isWhitspace() == false else { ptr += 1; continue }
+            
+            if let strings = getPostScriptObject(font: font, &ptr, start, end) {
+                stack.append(contentsOf: strings)
+            } else {
+                ptr += 1
+            }
+        }
+        ptr += 1
+        return stack
+    }
+    
+    return nil
+}
+
 func reify(document: JsonElement,
            id: Int,
            generation: Int,
@@ -57,50 +140,15 @@ func reify(document: JsonElement,
             continue
         }
         
-        if ptr[0] == .openBrace || ptr[0] == .parenOpen || ptr[0] == .forwardSlash,
-           let object = getObject(document: document,
-                                  id: id,
-                                  generation: generation,
-                                  &ptr, start, end) {
-            if let string = object.halfHitchValue {
-                stack.append(string)
-                continue
-            }
-            
-            for item in object.iterValues {
-                if let string = item.halfHitchValue {
-                    stack.append(string)
+        if let strings = getPostScriptObject(font: font, &ptr, start, end) {
+            if strings.count == 1 {
+                stack.append(strings[0])
+            } else if strings.count > 1 {
+                let combined = Hitch(capacity: 512)
+                for string in strings {
+                    combined.append(string)
                 }
-            }
-            continue
-        }
-        
-        if ptr[0] == .lessThan,
-           let string = getHexstringRaw(&ptr, start, end) {
-            if let font = font,
-               let cmap = font[element: "ToUnicode"]?[element: "content"]?[element: "cmap"],
-               string.count % 4 == 0 {
-                let convertedString = Hitch(capacity: string.count)
-                for idx in stride(from: 0, to: string.count, by: 4) {
-                    let code = HalfHitch(source: string, from: idx, to: idx + 4)
-                    if let unicode = cmap[halfhitch: code] {
-                        let value = toUnicode(unicode)
-                        switch value {
-                        case 0: break
-                        case 9: convertedString.append("    ")
-                        case 160: convertedString.append(.space)
-                        default:
-                            if let scalar = UnicodeScalar(value) {
-                                for v in Character(scalar).utf8 {
-                                    convertedString.append(v)
-                                }
-                            }
-                        }
-                    }
-                }
-                stack.append(convertedString.halfhitch())
-            } else {
-                stack.append(string)
+                stack.append(combined.halfhitch())
             }
             continue
         }
@@ -207,6 +255,7 @@ func reify(document: JsonElement,
             break
         case "Tf":
             // /F1 12 Tf
+            // /F19 8.5 Tf
             if stack.count >= 2 {
                 let _ = stack.removeLast()
                 let name = stack.removeLast()
@@ -219,13 +268,11 @@ func reify(document: JsonElement,
         }
     }
     
-    // remove empty strings
+    // clean up strings
     strings = strings.filter {
-        ($0[element: "text"]?.halfHitchValue?.count ?? 0) > 0
-    }
-    
-    strings = strings.filter {
-        $0[element: "text"]?.halfHitchValue != " "
+        guard let hh = $0[element: "text"]?.halfHitchValue else { return false }
+        guard hh.isPrintable(), hh.trimmed().count > 0 else { return false }
+        return true
     }
     
     // sort top to bottom, left to right

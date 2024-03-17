@@ -57,7 +57,7 @@ func beginbfchar(map: JsonElement,
         skipWhitespace(&ptr2, start, ptr)
         guard let unicode = getHexstringRaw(&ptr2, start, ptr) else { return }
         
-        map.set(key: cid, value: unicode)
+        map.set(key: cid.hitch().uppercase().halfhitch(), value: unicode)
     }
 }
 
@@ -100,7 +100,7 @@ func beginbfrange(map: JsonElement,
                 }
                 
                 let cid = fromUnicode(lowNum)
-                map.set(key: cid.halfhitch(), value: unicode)
+                map.set(key: cid.uppercase().halfhitch(), value: unicode)
                 lowNum += 1
             }
         } else {
@@ -118,7 +118,7 @@ func beginbfrange(map: JsonElement,
             for i in 0...(highNum - lowNum) {
                 let cid = fromUnicode(lowNum + i)
                 let unicode = fromUnicode(unicodeNum + i)
-                map.set(key: cid.halfhitch(), value: unicode)
+                map.set(key: cid.uppercase().halfhitch(), value: unicode)
             }
         }
     }

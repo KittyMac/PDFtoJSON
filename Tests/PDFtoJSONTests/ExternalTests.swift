@@ -109,6 +109,17 @@ final class ExternalTests: XCTestCase {
         //XCTAssertEqual(result, "1234567890\n")
     }
     
+    func testPDF9() {
+        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test9.pdf"))!
+        
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            print(root!.toHitch())
+        }
+        
+        //let result = PDFtoJSON.parse(image: image.dataNoCopy())
+        //XCTAssertEqual(result, "1234567890\n")
+    }
+    
     #endif
     
 }
