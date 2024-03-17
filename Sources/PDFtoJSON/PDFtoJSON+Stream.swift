@@ -39,10 +39,18 @@ fileprivate func predictorPNG(bpp: Int,
             }
             break
         case 3, 13: // Avg
-            fatalError("TO BE IMPEMENTED")
+            print("WARNING: Avg predictor not yet supported")
+            for idx in 0..<rowBytes {
+                writePtr[idx] = readPtr[idx]
+                // print(String(format: "none: %u = %u + 0", writePtr[idx], readPtr[idx]))
+            }
             break
         case 4, 14: // Paeth
-            fatalError("TO BE IMPEMENTED")
+            print("WARNING: Peath predictor not yet supported")
+            for idx in 0..<rowBytes {
+                writePtr[idx] = readPtr[idx]
+                // print(String(format: "none: %u = %u + 0", writePtr[idx], readPtr[idx]))
+            }
             break
         default: // 0, 10: None
             for idx in 0..<rowBytes {
