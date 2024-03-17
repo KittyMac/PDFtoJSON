@@ -6,8 +6,8 @@ func isXRef(_ info: JsonElement) -> Bool {
     return info[hitch: "Type"] == "XRef"
 }
 
-func ptrTo(_ ptr: inout UnsafePointer<UInt8>,
-           _ size: Int) -> Int {
+fileprivate func ptrTo(_ ptr: inout UnsafePointer<UInt8>,
+                       _ size: Int) -> Int {
     var value: Int = 0
     for _ in 0..<size {
         value = value << 8 | Int(ptr[0])
@@ -36,17 +36,19 @@ func reify(document: JsonElement,
         return ^error
     }
     
-    guard let offsetSize = widths[int: 0] else { return nil }
-    guard let generationSize = widths[int: 1] else { return nil }
-    guard let statusSize = widths[int: 2] else { return nil }
+    let numObjects = info[int: "Size"] ?? 0
+    
+    guard let typeSize = widths[int: 0] else { return nil }
+    guard let offsetSize = widths[int: 1] else { return nil }
+    guard let generationSize = widths[int: 2] else { return nil }
     
     let xref = JsonElement(unknown: ^[:])
     
     var index = 0
-    while ptr < end {
-        let type = ptrTo(&ptr, offsetSize)
-        let offset = ptrTo(&ptr, generationSize)
-        let generation = ptrTo(&ptr, statusSize)
+    while ptr < end && index < numObjects {
+        let type = ptrTo(&ptr, typeSize)
+        let offset = ptrTo(&ptr, offsetSize)
+        let generation = ptrTo(&ptr, generationSize)
         
         if type == 0 {
             xref.set(key: "{0}" << [index], value: JsonElement.null())
