@@ -15,8 +15,9 @@ func getObjectDefinition(document: JsonElement,
         if ptr[0] == .o,
            ptr[1] == .b,
            ptr[2] == .j,
-           ptr[3].isWhitspace() {
-            ptr += 4
+           ptr[3].isDelimiter() {
+            ptr += 3
+            skipWhitespace(&ptr, start, end)
             break
         }
         ptr += 1

@@ -266,6 +266,18 @@ final class InternalTests: XCTestCase {
                                  generation: 0, &ptr, ptr, end)?.description, #"{"id":2,"generation":0,"value":{"Type":"Page","Parent":{"id":1,"generation":0},"MediaBox":[0,0,612,792],"Contents":{"id":4,"generation":0},"Group":{"Type":"Group","S":"Transparency","I":true,"CS":"DeviceRGB"},"Resources":{"id":3,"generation":0}}}"#)
     }
     
+    func testParseDictionary9() {
+        let pdf: Hitch = """
+        6 0 obj<</BaseFont/Courier-Bold/Type/Font/Encoding/WinAnsiEncoding/Subtype/Type1>>
+        endobj
+        """
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(document: ^[],
+                                 id: 0,
+                                 generation: 0, &ptr, ptr, end)?.description, #"{"id":6,"generation":0,"value":{"BaseFont":"Courier-Bold","Type":"Font","Encoding":"WinAnsiEncoding","Subtype":"Type1"}}"#)
+    }
+    
     // MARK: - Object Definitions
     func testParseObjectDefinition0() {
         let pdf: Hitch = """

@@ -50,7 +50,7 @@ func getString(document: JsonElement,
                                         id: id,
                                         generation: generation,
                                         content: rawString.halfhitch())
-    guard let newRawString = newRawString else { return fail(error ?? "unknown error decrypting hexstring") }
+    guard let newRawString = newRawString else { return fail(error ?? "unknown error decrypting string") }
         
     let string = Hitch(capacity: newRawString.count)
     
@@ -96,5 +96,6 @@ func getString(document: JsonElement,
     }
     
     ptr += 1
+        
     return JsonElement(unknown: string)
 }

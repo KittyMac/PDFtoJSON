@@ -23,7 +23,7 @@ fileprivate func convertHexstring(font: JsonElement?,
                 let value = toUnicode(unicode)
                 switch value {
                 case 0: break
-                case 9: convertedString.append("    ")
+                case 9: convertedString.append(" ")
                 case 160: convertedString.append(.space)
                 default:
                     if let scalar = UnicodeScalar(value) {
