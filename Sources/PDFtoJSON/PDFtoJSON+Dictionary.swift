@@ -49,6 +49,12 @@ func getDictionary(document: JsonElement,
         document.set(key: "fonts", value: documentFonts)
     }
     
+    #if DEBUG
+    if let xrefStream = results[element: "XRefStm"] {
+        fatalError("XRefStm")
+    }
+    #endif
+    
     if let type = results[hitch: "Type"] {
         
         if type == "Catalog",

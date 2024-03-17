@@ -5,15 +5,17 @@ import Hitch
 func fail(_ error: String) -> JsonElement? {
     #if DEBUG
     fatalError(error)
-    #endif
+    #else
     return nil
+    #endif
 }
 
 func fail(_ error: String) -> HalfHitch? {
     #if DEBUG
     fatalError(error)
-    #endif
+    #else
     return nil
+    #endif
 }
 
 func printAround(ptr: UnsafePointer<UInt8>,

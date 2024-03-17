@@ -33,8 +33,9 @@ fileprivate func convertHexstring(font: JsonElement?,
                     }
                 }
             } else {
-                // print(cmap)
+                #if DEBUG
                 fatalError("cmap lookup failed: \(code)")
+                #endif
             }
         }
         stack.append(convertedString.halfhitch())
@@ -151,7 +152,6 @@ func reify(document: JsonElement,
         }
         
         guard let value = peekParts(n: 1, ptr, end).first else {
-            fatalError("should not happen")
             break
         }
         
