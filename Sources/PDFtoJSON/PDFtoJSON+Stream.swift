@@ -168,7 +168,7 @@ func getStream(document: JsonElement,
                            parentInfo: parentInfo,
                            unknown: streamContent) {
         streamInfo.set(key: "content", value: content)
-        streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+        // streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     } else {
         // streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     }
