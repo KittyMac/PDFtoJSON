@@ -116,36 +116,48 @@ func getStream(document: JsonElement,
     
     streamContent = newStreamContent ?? streamContent
     
-    if let filter = streamInfo[halfhitch: "Filter"] {
-        if filter == "FlateDecode" {
-            var rowBytes = 0
-            var bpp = 0
-            var predictor = 0
-            if let decodeParams = streamInfo[element: "DecodeParms"] {
-                predictor = decodeParams[int: "Predictor"] ?? 0
-                if predictor >= 10 && predictor <= 15 {
-                    let bpc = decodeParams[int: "BitsPerComponent"] ?? 8
-                    let colors = decodeParams[int: "Colors"] ?? 1
-                    let columns = decodeParams[int: "Columns"] ?? 1
-                    bpp = (bpc * colors + 7) / 8
-                    rowBytes = (bpc * colors * columns + 7) / 8
-                }
+    var filter: HalfHitch? = streamInfo[halfhitch: "Filter"]
+    
+    if let filterArray = streamInfo[element: "Filter"],
+       filterArray.type == .array,
+       let first = filterArray[element: 0],
+       first.type == .string {
+        filter = first.halfHitchValue
+    }
+    
+    if filter == "FlateDecode" {
+        var rowBytes = 0
+        var bpp = 0
+        var predictor = 0
+        if let decodeParams = streamInfo[element: "DecodeParms"] {
+            predictor = decodeParams[int: "Predictor"] ?? 0
+            if predictor >= 10 && predictor <= 15 {
+                let bpc = decodeParams[int: "BitsPerComponent"] ?? 8
+                let colors = decodeParams[int: "Colors"] ?? 1
+                let columns = decodeParams[int: "Columns"] ?? 1
+                bpp = (bpc * colors + 7) / 8
+                rowBytes = (bpc * colors * columns + 7) / 8
             }
-                
-            if let decompressed = try? ZlibArchive.unarchive(archive: streamContent.dataNoCopy()) {
-                let dataAsHitch = Hitch(data: decompressed)
-                
-                // PNG predictor
-                if predictor >= 10 && predictor <= 15,
-                   let start = dataAsHitch.mutableRaw() {
-                    let end = start + dataAsHitch.count
-                    predictorPNG(bpp: bpp,
-                                 rowBytes: rowBytes,
-                                 start, end)
-                }
-                
-                streamContent = dataAsHitch.halfhitch()
+        }
+            
+        if let decompressed = try? ZlibArchive.unarchive(archive: streamContent.dataNoCopy()) {
+            let dataAsHitch = Hitch(data: decompressed)
+            
+            // TIFF predictor
+            if predictor == 2 {
+                print("WARNING: TIFF predictor not yet supported")
             }
+            
+            // PNG predictor
+            if predictor >= 10 && predictor <= 15,
+               let start = dataAsHitch.mutableRaw() {
+                let end = start + dataAsHitch.count
+                predictorPNG(bpp: bpp,
+                             rowBytes: rowBytes,
+                             start, end)
+            }
+            
+            streamContent = dataAsHitch.halfhitch()
         }
     }
     
@@ -156,9 +168,9 @@ func getStream(document: JsonElement,
                            parentInfo: parentInfo,
                            unknown: streamContent) {
         streamInfo.set(key: "content", value: content)
-        //streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+        streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     } else {
-        //streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+        streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     }
         
     ptr += length

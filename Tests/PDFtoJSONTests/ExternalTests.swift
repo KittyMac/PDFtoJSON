@@ -23,23 +23,22 @@ final class ExternalTests: XCTestCase {
         }
     }
     
-    #if os(macOS)
     func testPDF1() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test1.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test1.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("United States"))
         }
     }
     
     func testPDF2() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test2.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test2.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("automatically"))
         }
     }
     
     func testPDF3() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test3.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test3.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("See complete"))
 
@@ -47,14 +46,14 @@ final class ExternalTests: XCTestCase {
     }
     
     func testPDF4() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test4.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test4.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("Entry Method"))
         }
     }
     
     func testPDF5() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test5.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test5.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("may be applicable"))
 
@@ -62,41 +61,39 @@ final class ExternalTests: XCTestCase {
     }
     
     func testPDF6() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test6.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test6.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("NOT WORKING"))
+            XCTAssertTrue(text(root, true).contains("First Floor"))
 
         }
     }
     
     func testPDF7() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test7.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test7.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("Appreciation Night"))
         }
     }
     
     func testPDF8() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test8.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test8.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, true).contains("NOT WORKING"))
         }
     }
     
     func testPDF9() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test9.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test9.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("Operated under"))
         }
     }
     
     func testPDF10() {
-        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test10.pdf"))!
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test10.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("WEATHERSHIELD"))
         }
     }
-    
-    #endif
     
 }

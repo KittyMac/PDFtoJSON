@@ -95,10 +95,7 @@ func reify(document: JsonElement,
            postScript content: HalfHitch) -> JsonElement? {
     guard isPostScript(content) else { return nil }
     // Given a postscript string, extract all text renders and their positioning
-    
-    // TODO: actually handle the postscript movement and transformations. For now, just find
-    // all strings and output them...
-    
+        
     // print("=======================")
     // print(content)
     // print("=======================")

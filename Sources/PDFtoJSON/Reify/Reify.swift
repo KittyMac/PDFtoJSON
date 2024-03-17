@@ -73,8 +73,6 @@ func reify(document: JsonElement,
                            parentInfo: document,
                            start, end) else { return page }
     
-    // TODO: what we really want to do it extract strings and
-    // put it into a new page object based on the contents
     let textContent = ^[]
     let width = page[element: "MediaBox"]?[double: 2] ?? 0
     let height = page[element: "MediaBox"]?[double: 3] ?? 0
