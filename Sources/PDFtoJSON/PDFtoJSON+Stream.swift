@@ -170,7 +170,7 @@ func getStream(document: JsonElement,
         streamInfo.set(key: "content", value: content)
         streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     } else {
-        streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+        // streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     }
         
     ptr += length

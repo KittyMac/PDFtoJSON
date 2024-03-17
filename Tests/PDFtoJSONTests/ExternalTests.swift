@@ -63,7 +63,7 @@ final class ExternalTests: XCTestCase {
     func testPDF6() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test6.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("First Floor"))
+            XCTAssertTrue(text(root, false).contains("First Floor"))
 
         }
     }
@@ -93,6 +93,13 @@ final class ExternalTests: XCTestCase {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test10.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("WEATHERSHIELD"))
+        }
+    }
+    
+    func testPDF11() {
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test11.pdf")) else { return }
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            XCTAssertTrue(text(root, true).contains("NOT WORKING"))
         }
     }
     

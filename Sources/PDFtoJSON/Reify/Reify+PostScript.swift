@@ -13,6 +13,8 @@ fileprivate func convertHexstring(font: JsonElement?,
     guard let string = getHexstringRaw(&ptr, start, end) else { return [] }
     var stack: [HalfHitch] = []
     
+    guard let _: UInt8 = hex(string[0]) else { return stack }
+    
     if let font = font,
        let cmap = font[element: "ToUnicode"]?[element: "content"]?[element: "cmap"],
        string.count % 4 == 0 {

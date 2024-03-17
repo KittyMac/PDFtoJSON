@@ -60,12 +60,25 @@ func getXrefTable(document: JsonElement,
     
     document.set(key: "xref", value: xref)
     
-    if let trailer = document[element: "trailer"],
-       let prevOffset = trailer[int: "Prev"] {
-        var ptr = start + prevOffset
-        return getXrefTable(document: document,
-                            &ptr, start, end)
+    if let trailer = document[element: "trailer"] {
+        let prevOffset = trailer[int: "Prev"]
+        let xrefStreamOffset = trailer[int: "XRefStm"]
+        
+        if let prevOffset = prevOffset {
+            var ptr = start + prevOffset
+            if let error = getXrefTable(document: document,
+                                        &ptr, start, end) {
+                return error
+            }
+        }
+        if let xrefStreamOffset = xrefStreamOffset {
+            var ptr = start + xrefStreamOffset
+            if let error = getXrefTable(document: document,
+                                        &ptr, start, end) {
+                return error
+            }
+        }
     }
-    
+        
     return nil
 }

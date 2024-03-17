@@ -19,18 +19,22 @@ func reify(document: JsonElement,
     
     if let start = content.raw() {
         
-        if let idx = content.firstIndex(of: "beginbfchar") {
+        var docIdx = 0
+        while let idx = content.firstIndex(of: "beginbfchar", offset: docIdx) {
             var ptr = start + idx + 11
             let end = start + content.count
             beginbfchar(map: cmap,
                         &ptr, start, end)
+            docIdx = ptr - start
         }
         
-        if let idx = content.firstIndex(of: "beginbfrange") {
+        docIdx = 0
+        while let idx = content.firstIndex(of: "beginbfrange", offset: docIdx) {
             var ptr = start + idx + 12
             let end = start + content.count
             beginbfrange(map: cmap,
                          &ptr, start, end)
+            docIdx = ptr - start
         }
         
     }
