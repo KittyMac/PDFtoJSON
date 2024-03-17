@@ -69,7 +69,6 @@ fileprivate func getPostScriptObject(font: JsonElement?,
         let strings = convertHexstring(font: font,
                                        &ptr, start, end)
         stack.append(contentsOf: strings)
-        ptr += 1
         return stack
     }
     

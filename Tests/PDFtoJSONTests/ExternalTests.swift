@@ -99,7 +99,7 @@ final class ExternalTests: XCTestCase {
     func testPDF11() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test11.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("NOT WORKING"))
+            XCTAssertTrue(text(root, false).contains("sales tax"))
         }
     }
     
