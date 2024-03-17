@@ -69,18 +69,7 @@ func getStream(document: JsonElement,
     } else {
         //streamInfo.set(key: "__content", value: streamContent.base64Encoded())
     }
-    
-    /*
-    if let contentJson = reify(
-    
-    if let strings = getPostScript(document: document,
-                                   id: -1,
-                                   generation: -1,
-                                   streamContent) {
-        streamInfo.set(key: "__strings", value: strings)
-    }*/
-    
-    
+        
     ptr += length
     
     while ptr < end && ptr[0].isWhitspace() {

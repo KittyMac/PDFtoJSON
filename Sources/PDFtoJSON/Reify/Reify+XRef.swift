@@ -44,11 +44,11 @@ func reify(document: JsonElement,
     
     var index = 0
     while ptr < end {
-        let offset = ptrTo(&ptr, offsetSize)
-        let generation = ptrTo(&ptr, generationSize)
-        let _ = ptrTo(&ptr, statusSize)
+        let type = ptrTo(&ptr, offsetSize)
+        let offset = ptrTo(&ptr, generationSize)
+        let generation = ptrTo(&ptr, statusSize)
         
-        if offset == 0 {
+        if type == 0 {
             xref.set(key: "{0}" << [index], value: JsonElement.null())
         } else {
             xref.set(key: "{0}" << [index], value: ^[
