@@ -50,6 +50,25 @@ func getDictionary(document: JsonElement,
     }
     
     if let type = results[hitch: "Type"] {
+        
+        if type == "Catalog",
+           let pages = results[element: "Pages"] {
+            _ = reify(document: document,
+                      reference: pages,
+                      parentInfo: results,
+                      start, end)
+        }
+        
+        if type == "Pages",
+           let kids = results[element: "Kids"] {
+            for kid in kids.iterValues {
+                _ = reify(document: document,
+                          reference: kid,
+                          parentInfo: results,
+                          start, end)
+            }
+        }
+        
         if type == "Page" {
             let documentPages = document[element: "pages"] ?? ^[]
                         

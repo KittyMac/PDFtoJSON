@@ -152,33 +152,23 @@ extension PDFtoJSON {
                     return (error, nil)
                 }
             }
-            
-            
-            // preload all xref objects
-            guard let xref = document[element: "xref"] else { return ("xref is missing", nil) }
-            for objectIdString in xref.iterKeys {
-                guard let objectId = objectIdString.toInt() else { return ("xref key is not an objectId", nil) }
+
+            if let root = trailer[element: "Root"] {
                 _ = reify(document: document,
-                          id: objectId,
+                          reference: root,
                           parentInfo: JsonElement.null(),
                           start, end)
+            } else {
+                // should always be a root; if there is not, just load everything in the xref
+                guard let xref = document[element: "xref"] else { return ("xref is missing", nil) }
+                for objectIdString in xref.iterKeys {
+                    guard let objectId = objectIdString.toInt() else { return ("xref key is not an objectId", nil) }
+                    _ = reify(document: document,
+                              id: objectId,
+                              parentInfo: JsonElement.null(),
+                              start, end)
+                }
             }
-                        
-            // Now that we have the xref table, parse needed info
-            // from the trailer (encryption keys and such)
-            //guard let trailer = document[element: "trailer"] else { return ("trailer is missing", nil) }
-            //guard let documentInfoRef = trailer[element: "Info"] else { return ("trailer Info missing", nil) }
-            
-            
-            
-            //var elementStack: [JsonElement] = []
-
-            //var jsonAttribute = ParseValue()
-            //var rootElement: JsonElement?
-            //var jsonElement: JsonElement?
-
-            
-            
             
             return (nil, document)
         }

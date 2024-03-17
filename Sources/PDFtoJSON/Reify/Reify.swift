@@ -25,8 +25,6 @@ func reify(document: JsonElement,
     let objectId = "{0}" << [id]
     guard let object = objects[element: objectId] else {
         
-        // load the document object
-        // preload all xref objects
         guard let xref = document[element: "xref"] else { return fail("document has no xref") }
         guard let xrefValue = xref[element: "{0}" << [id]] else { return fail("object ref missing") }
         guard xrefValue.type != .null else { return nil }
@@ -37,7 +35,8 @@ func reify(document: JsonElement,
         guard let newObject = getObject(document: document,
                                         id: id,
                                         generation: generation,
-                                        parentInfo: parentInfo, &objectPtr, start, end) else { return fail("failed to load xref object \(id)") }
+                                        parentInfo: parentInfo,
+                                        &objectPtr, start, end) else { return fail("failed to load xref object \(id)") }
         
         objects.set(key: objectId, value: newObject)
         return newObject[element: "value"]

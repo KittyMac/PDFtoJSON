@@ -12,7 +12,7 @@ func getXrefTable(document: JsonElement,
         return nil
     }
     
-    let xref = JsonElement(unknown: ^[:])
+    let xref = document[element: "xref"] ?? ^[:]
     
     var index = 0
     while ptr < end {
@@ -59,5 +59,13 @@ func getXrefTable(document: JsonElement,
     }
     
     document.set(key: "xref", value: xref)
+    
+    if let trailer = document[element: "trailer"],
+       let prevOffset = trailer[int: "Prev"] {
+        var ptr = start + prevOffset
+        return getXrefTable(document: document,
+                            &ptr, start, end)
+    }
+    
     return nil
 }
