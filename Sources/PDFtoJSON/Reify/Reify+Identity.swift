@@ -14,6 +14,14 @@ func reify(document: JsonElement,
     //print(parentInfo)
     
     // Given some content, parse it out.
+    if isXRef(objectInfo) {
+        return reify(document: document,
+                     id: id,
+                     generation: generation,
+                     info: objectInfo,
+                     xref: content)
+    }
+    
     if isImage(objectInfo) {
         return reify(document: document,
                      id: id,

@@ -242,6 +242,30 @@ final class InternalTests: XCTestCase {
                                  generation: 0, &ptr, ptr, end)?.description, #"{"XObject":{"Im0":{"id":5,"generation":0},"Im1":{"id":18,"generation":0}},"Font":{"F2":{"id":13,"generation":0},"F1":{"id":8,"generation":0},"F3":{"id":21,"generation":0}},"ProcSet":["PDF","Text"]}"#)
     }
     
+    func testParseDictionary8() {
+        let pdf: Hitch = """
+        2 0 obj
+        << /Type /Page % 1
+           /Parent 1 0 R
+           /MediaBox [ 0 0 612 792 ]
+           /Contents 4 0 R
+           /Group <<
+              /Type /Group
+              /S /Transparency
+              /I true
+              /CS /DeviceRGB
+           >>
+           /Resources 3 0 R
+        >>
+        endobj
+        """
+        guard var ptr = pdf.raw() else { XCTFail(); return }
+        let end = ptr + pdf.count
+        XCTAssertEqual(getObject(document: ^[],
+                                 id: 0,
+                                 generation: 0, &ptr, ptr, end)?.description, #"{"id":2,"generation":0,"value":{"Type":"Page","Parent":{"id":1,"generation":0},"MediaBox":[0,0,612,792],"Contents":{"id":4,"generation":0},"Group":{"Type":"Group","S":"Transparency","I":true,"CS":"DeviceRGB"},"Resources":{"id":3,"generation":0}}}"#)
+    }
+    
     // MARK: - Object Definitions
     func testParseObjectDefinition0() {
         let pdf: Hitch = """

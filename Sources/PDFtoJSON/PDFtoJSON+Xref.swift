@@ -6,6 +6,12 @@ func getXrefTable(document: JsonElement,
                   _ ptr: inout UnsafePointer<UInt8>,
                   _ start: UnsafePointer<UInt8>,
                   _ end: UnsafePointer<UInt8>) -> String? {
+    // NOTE: can either be embedded xref or a reference to an xref stream.
+    if ptr[0] != .x {
+        let _ = getObject(document: document, id: -1, generation: -1, &ptr, start, end)
+        return nil
+    }
+    
     let xref = JsonElement(unknown: ^[:])
     
     var index = 0

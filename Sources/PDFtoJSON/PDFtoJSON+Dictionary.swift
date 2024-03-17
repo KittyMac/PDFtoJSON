@@ -23,17 +23,18 @@ func getDictionary(document: JsonElement,
             break
         }
         
-        guard let titleObject = getObject(document: document,
-                                          id: id,
-                                          generation: generation,
-                                          &ptr, start, end) else { break }
-        guard let titleString = titleObject.halfHitchValue else { break }
-        guard let valueObject = getObject(document: document,
-                                          id: id,
-                                          generation: generation,
-                                          &ptr, start, end) else { break }
-        
-        results.set(key: titleString, value: valueObject)
+        // NOTE: comments will return nil
+        if let titleObject = getObject(document: document,
+                                       id: id,
+                                       generation: generation,
+                                       &ptr, start, end) {
+            guard let titleString = titleObject.halfHitchValue else { break }
+            guard let valueObject = getObject(document: document,
+                                              id: id,
+                                              generation: generation,
+                                              &ptr, start, end) else { break }
+            results.set(key: titleString, value: valueObject)
+        }
     }
     
     // Recognize specific dictionaries and put them into a lookup table

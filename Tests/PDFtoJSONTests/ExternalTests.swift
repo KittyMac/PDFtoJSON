@@ -64,6 +64,40 @@ final class ExternalTests: XCTestCase {
         //let result = PDFtoJSON.parse(image: image.dataNoCopy())
         //XCTAssertEqual(result, "1234567890\n")
     }
+    
+    func testPDF5() {
+        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test5.pdf"))!
+        
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            print(root!.toHitch())
+        }
+        
+        //let result = PDFtoJSON.parse(image: image.dataNoCopy())
+        //XCTAssertEqual(result, "1234567890\n")
+    }
+    
+    func testPDF6() {
+        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test6.pdf"))!
+        
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            print(root!.toHitch())
+        }
+        
+        //let result = PDFtoJSON.parse(image: image.dataNoCopy())
+        //XCTAssertEqual(result, "1234567890\n")
+    }
+    
+    func testPDF7() {
+        let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test7.pdf"))!
+        
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            print(root!.toHitch())
+        }
+        
+        //let result = PDFtoJSON.parse(image: image.dataNoCopy())
+        //XCTAssertEqual(result, "1234567890\n")
+    }
+    
     #endif
     
 }

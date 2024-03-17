@@ -95,7 +95,7 @@ func getObject(document: JsonElement,
         
         // Comment
         if ptr[0] == .percentSign {
-            while ptr < end && ptr[0].isWhitspace() == false {
+            while ptr < end && ptr[0] != .newLine && ptr[0] != .carriageReturn {
                 ptr += 1
             }
             return nil
