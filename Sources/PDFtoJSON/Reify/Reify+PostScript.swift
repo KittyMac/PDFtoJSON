@@ -191,8 +191,8 @@ func reify(document: JsonElement,
             for part in combined.iterValues {
                 strings.append(part)
             }
-            
             textBlock = []
+            
             ptr += value.count
             break
         case "q":
@@ -238,6 +238,14 @@ func reify(document: JsonElement,
             ptr += value.count
             break
         case "Tm":
+            // WIP: treat any movement in the text matrix as if it were
+            // a new block of text
+            let combined = combineIfSameLine(texts: textBlock)
+            for part in combined.iterValues {
+                strings.append(part)
+            }
+            textBlock = []
+            
             // 11 0 0 11 8 19 Tm
             if stack.count >= 6 {
                 let f = stack.removeLast().toDouble() ?? 0.0
