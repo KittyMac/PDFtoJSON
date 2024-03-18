@@ -227,13 +227,15 @@ func getObject(document: JsonElement,
             return JsonElement(unknown: value)
         }
         
+        // Unknown token
         #if DEBUG
         printAround(ptr: ptr,
                     start: start,
                     end: end)
-        
         // fatalError("UNKNOWN TOKEN")
         #endif
+        
+        return nil
     }
     
     
