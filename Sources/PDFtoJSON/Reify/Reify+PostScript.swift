@@ -82,6 +82,32 @@ fileprivate func getPostScriptObject(font: JsonElement?,
                 stack.append(contentsOf: strings)
             } else {
                 ptr += 1
+                
+                /*
+                // arrays contain numbers, which equate to horizontal translations
+                // right now we are just parsing these numbers but not doing anything
+                // with them
+                skipWhitespace(&ptr, start, end)
+                let numPtr = ptr
+                while (ptr[0] >= .zero && ptr[0] <= .nine) || (ptr[0] == .minus || ptr[0] == .dot) {
+                    ptr += 1
+                }
+                if numPtr != ptr {
+                    let fontScale = font?[double: "__scale"] ?? 1.0
+                    let numHitch = HalfHitch(sourceObject: nil,
+                                             raw: numPtr,
+                                             count: ptr - numPtr,
+                                             from: 0,
+                                             to: ptr - numPtr)
+                    if let value = numHitch.toDouble(fuzzy: true) {
+                        if value >= 100 {
+                            stack.append("    ")
+                        }
+                    }
+                } else {
+                    ptr += 1
+                }
+                 */
             }
         }
         ptr += 1
@@ -255,9 +281,10 @@ func reify(document: JsonElement,
             // /F1 12 Tf
             // /F19 8.5 Tf
             if stack.count >= 2 {
-                let _ = stack.removeLast()
+                let scale = stack.removeLast()
                 let name = stack.removeLast()
                 font = documentFonts[element: name]
+                font?.set(key: "__scale", value: scale.toDouble(fuzzy: true) ?? 1.0)
             }
             ptr += value.count
         default:

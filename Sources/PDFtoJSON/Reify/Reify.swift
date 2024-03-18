@@ -61,6 +61,14 @@ func reify(document: JsonElement,
                  value: toUnicode)
     }
     
+    if let fontDescriptor = reify(document: document,
+                                  reference: font[element: "FontDescriptor"],
+                                  parentInfo: font,
+                                  start, end) {
+        font.set(key: "FontDescriptor",
+                 value: fontDescriptor)
+    }
+    
     return font
 }
 

@@ -55,7 +55,7 @@ final class ExternalTests: XCTestCase {
     func testPDF5() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test5.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, false).contains("may be applicable"))
+            XCTAssertTrue(text(root, true).contains("may be applicable"))
 
         }
     }
@@ -71,7 +71,7 @@ final class ExternalTests: XCTestCase {
     func testPDF7() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test7.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, false).contains("Appreciation Night"))
+            XCTAssertTrue(text(root, true).contains("Appreciation Night"))
         }
     }
     
@@ -100,6 +100,13 @@ final class ExternalTests: XCTestCase {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test11.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("sales tax"))
+        }
+    }
+    
+    func testPDF12() {
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test12.pdf")) else { return }
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
         }
     }
     
