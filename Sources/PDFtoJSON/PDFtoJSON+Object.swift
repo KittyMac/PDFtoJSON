@@ -232,7 +232,7 @@ func getObject(document: JsonElement,
                     start: start,
                     end: end)
         
-        fatalError("UNKNOWN TOKEN")
+        // fatalError("UNKNOWN TOKEN")
         #endif
     }
     

@@ -3,19 +3,19 @@ import Spanker
 import Hitch
 
 func fail(_ error: String) -> JsonElement? {
-    #if DEBUG
-    fatalError(error)
-    #else
+    // #if DEBUG
+    // fatalError(error)
+    // #else
     return nil
-    #endif
+    //#endif
 }
 
 func fail(_ error: String) -> HalfHitch? {
-    #if DEBUG
-    fatalError(error)
-    #else
+    // #if DEBUG
+    // fatalError(error)
+    // #else
     return nil
-    #endif
+    //#endif
 }
 
 func printAround(ptr: UnsafePointer<UInt8>,

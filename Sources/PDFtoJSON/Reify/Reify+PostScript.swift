@@ -35,9 +35,9 @@ fileprivate func convertHexstring(font: JsonElement?,
                     }
                 }
             } else {
-                #if DEBUG
-                fatalError("cmap lookup failed: \(code)")
-                #endif
+                // #if DEBUG
+                // fatalError("cmap lookup failed: \(code)")
+                // #endif
             }
         }
         stack.append(convertedString.halfhitch())
