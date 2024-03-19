@@ -14,8 +14,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/KittyMac/Hitch.git", from: "0.4.121"),
         .package(url: "https://github.com/KittyMac/Spanker.git", from: "0.2.0"),
-        .package(url: "https://github.com/tsolomko/SWCompression.git", from: "4.8.5"),
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.5.0"),
+        .package(url: "https://github.com/KittyMac/GzipSwift.git", from: "5.3.0"),
     ],
     targets: [
         .target(
@@ -23,8 +23,8 @@ let package = Package(
             dependencies: [
                 "Hitch",
                 "Spanker",
-                "SWCompression",
-                "CryptoSwift"
+                "CryptoSwift",
+                .product(name: "Gzip", package: "GzipSwift"),
             ]
         ),
         .testTarget(

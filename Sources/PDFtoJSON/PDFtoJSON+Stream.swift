@@ -1,7 +1,7 @@
 import Foundation
 import Spanker
 import Hitch
-import SWCompression
+import Gzip
 
 fileprivate func predictorPNG(bpp: Int,
                               rowBytes: Int,
@@ -139,8 +139,10 @@ func getStream(document: JsonElement,
                 rowBytes = (bpc * colors * columns + 7) / 8
             }
         }
+        
+        
             
-        if let decompressed = try? ZlibArchive.unarchive(archive: streamContent.dataNoCopy()) {
+        if let decompressed = try? streamContent.dataNoCopy().gunzipped() {
             let dataAsHitch = Hitch(data: decompressed)
             
             // TIFF predictor
