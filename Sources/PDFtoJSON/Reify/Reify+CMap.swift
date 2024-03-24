@@ -119,10 +119,12 @@ func beginbfrange(map: JsonElement,
             let highNum = toUnicode(high)
             let unicodeNum = toUnicode(unicode)
             
-            for i in 0...(highNum - lowNum) {
-                let cid = fromUnicode(lowNum &+ i)
-                let unicode = fromUnicode(unicodeNum &+ i)
-                map.set(key: cid.uppercase().halfhitch(), value: unicode)
+            if highNum > lowNum {
+                for i in 0...(highNum - lowNum) {
+                    let cid = fromUnicode(lowNum &+ i)
+                    let unicode = fromUnicode(unicodeNum &+ i)
+                    map.set(key: cid.uppercase().halfhitch(), value: unicode)
+                }
             }
         }
     }

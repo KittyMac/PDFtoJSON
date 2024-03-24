@@ -101,8 +101,7 @@ extension PDFtoJSON {
         @usableFromInline
         internal static func parse(halfhitch pdf: HalfHitch) -> (String?, JsonElement?) {
             var currentIdx = 0
-            var char: UInt8 = 0
-            
+
             let document = JsonElement(unknown: ^[
                 "__parse_date": Int(Date().timeIntervalSince1970)
             ])
