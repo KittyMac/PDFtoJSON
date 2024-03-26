@@ -44,10 +44,13 @@ func getXrefTable(document: JsonElement,
             guard let offset = line.substring(0, 10)?.toInt() else { return "malformed xref line: \(line)" }
             guard let generation = line.substring(11, 16)?.toInt() else { return "malformed xref line: \(line)" }
             
-            xref.set(key: "{0}" << [index], value: ^[
-                "offset": offset,
-                "generation": generation
-            ])
+            // NOTE: this is temporary, we should fix to handle very large pdfs with hundreds of thousands of refs
+            if index < 2048 {
+                xref.set(key: "{0}" << [index], value: ^[
+                    "offset": offset,
+                    "generation": generation
+                ])
+            }
             
             index += 1
         } else {
