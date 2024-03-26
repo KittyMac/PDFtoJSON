@@ -235,6 +235,8 @@ func getObject(document: JsonElement,
         // fatalError("UNKNOWN TOKEN")
         #endif
         
+        ptr = end
+        
         return nil
     }
     
