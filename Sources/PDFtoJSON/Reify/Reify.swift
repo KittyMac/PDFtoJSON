@@ -31,6 +31,9 @@ func reify(document: JsonElement,
         guard let offset = xrefValue[int: "offset"] else { return fail("missing xref offset") }
         guard let generation = xrefValue[int: "generation"] else { return fail("missing xref generation") }
 
+        // set it to null first to protect against cyclic references
+        objects.set(key: objectId, value: JsonElement.null())
+        
         var objectPtr = start + offset
         guard let newObject = getObject(document: document,
                                         id: id,

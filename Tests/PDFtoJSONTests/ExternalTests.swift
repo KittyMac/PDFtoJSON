@@ -124,4 +124,11 @@ final class ExternalTests: XCTestCase {
         }
     }
     
+    func testPDF15() {
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Users/rjbowli/Development/data/pdfs/test15.pdf")) else { return }
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+        }
+    }
+    
 }
