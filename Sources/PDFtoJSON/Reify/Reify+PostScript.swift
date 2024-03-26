@@ -178,7 +178,8 @@ func reify(document: JsonElement,
             continue
         }
         
-        guard let value = peekParts(n: 1, ptr, end).first else {
+        guard let value = peekParts(n: 1, ptr, end).first,
+              value.count > 0 else {
             break
         }
         
