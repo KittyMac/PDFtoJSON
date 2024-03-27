@@ -50,13 +50,16 @@ func reify(document: JsonElement,
         let offset = ptrTo(&ptr, offsetSize)
         let generation = ptrTo(&ptr, generationSize)
         
-        if type == 0 {
-            xref.set(key: "{0}" << [index], value: JsonElement.null())
-        } else {
-            xref.set(key: "{0}" << [index], value: ^[
-                "offset": offset,
-                "generation": generation
-            ])
+        // NOTE: this is temporary, we should fix to handle very large pdfs with hundreds of thousands of refs
+        if index < 2048 {
+            if type == 0 {
+                // xref.set(key: Hitch(number: index).halfhitch(), value: JsonElement.null())
+            } else {
+                xref.set(key: Hitch(number: index).halfhitch(), value: ^[
+                    "offset": offset,
+                    "generation": generation
+                ])
+            }
         }
         
         index += 1
