@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/KittyMac/Hitch.git", from: "0.4.121"),
         .package(url: "https://github.com/KittyMac/Spanker.git", from: "0.2.0"),
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.5.0"),
-        .package(url: "https://github.com/KittyMac/GzipSwift.git", from: "5.3.0"),
+        .package(url: "https://github.com/KittyMac/GzipSwift.git", from: "5.3.4"),
     ],
     targets: [
         .target(
