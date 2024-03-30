@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/KittyMac/GzipSwift.git",
       "state" : {
-        "revision" : "a06c5d1cd82ce3645401c01411851a66b2f1fe05",
-        "version" : "5.3.4"
+        "revision" : "2cb5470205368f4dc1acc51bf87eb4a4b095a130",
+        "version" : "5.3.5"
       }
     },
     {
