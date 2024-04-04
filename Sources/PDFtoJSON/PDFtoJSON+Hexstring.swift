@@ -15,6 +15,10 @@ extension HalfHitch {
             let byte = data[index]
             if (byte & 0x80) == 0 {
                 // Single-byte UTF-8 character
+                if byte < 8 || byte > 127 {
+                    return false
+                }
+                
                 index += 1
             } else if (byte & 0xE0) == 0xC0 {
                 // Two-byte UTF-8 character
