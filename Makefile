@@ -34,8 +34,8 @@ fedora38: docker
 	docker buildx build --file Dockerfile-fedora38 --platform linux/amd64,linux/arm64 --push -t kittymac/pdftojson .
 
 docker:
-	-docker buildx create --name cluster_builder203
-	-DOCKER_HOST=ssh://rjbowli@192.168.111.203 docker buildx create --name cluster_builder203 --platform linux/amd64 --append
+	-DOCKER_HOST=ssh://rjbowli@192.168.111.203 docker buildx create --name cluster_builder203 --platform linux/amd64
+	-docker buildx create --name cluster_builder203 --platform linux/arm64 --append
 	-docker buildx use cluster_builder203
 	-docker buildx inspect --bootstrap
 	-docker login
