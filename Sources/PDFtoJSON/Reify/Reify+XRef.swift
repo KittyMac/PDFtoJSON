@@ -55,10 +55,13 @@ func reify(document: JsonElement,
             if type == 0 {
                 // xref.set(key: Hitch(number: index).halfhitch(), value: JsonElement.null())
             } else {
-                xref.set(key: Hitch(number: index).halfhitch(), value: ^[
-                    "offset": offset,
-                    "generation": generation
-                ])
+                let idxKey = Hitch(number: index).halfhitch()
+                if xref[element: idxKey] == nil {
+                    xref.set(key: idxKey, value: ^[
+                        "offset": offset,
+                        "generation": generation
+                    ])
+                }
             }
         }
         

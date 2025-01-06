@@ -234,14 +234,14 @@ final class ExternalTests: XCTestCase {
     func testPDF36() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test36.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Chaos"))
+            XCTAssertTrue(text(root, false).contains("Natur Radler"))
         }
     }
     
     func testPDF37() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test37.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Chaos"))
+            XCTAssertTrue(text(root, false).contains("RECHNUNG"))
         }
     }
 }
