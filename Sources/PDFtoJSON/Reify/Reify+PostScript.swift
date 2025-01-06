@@ -303,6 +303,14 @@ func reify(document: JsonElement,
     }
     
     // clean up strings
+    strings = strings.map {
+        if let hh = $0[element: "text"]?.halfHitchValue,
+           hh.isPrintable() == false {
+            $0.set(key: "text", value: hh.hitch().ascii())
+        }
+        return $0
+    }
+    
     strings = strings.filter {
         guard let hh = $0[element: "text"]?.halfHitchValue else { return false }
         guard hh.isPrintable(), hh.trimmed().count > 0 else { return false }
