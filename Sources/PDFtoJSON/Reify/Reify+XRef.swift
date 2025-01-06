@@ -42,7 +42,7 @@ func reify(document: JsonElement,
     guard let offsetSize = widths[int: 1] else { return nil }
     guard let generationSize = widths[int: 2] else { return nil }
     
-    let xref = JsonElement(unknown: ^[:])
+    let xref = document[element: "xref"] ?? ^[:]
     
     var index = 0
     while ptr < end && index < numObjects {
