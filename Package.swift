@@ -5,9 +5,6 @@ import Foundation
 
 let package = Package(
     name: "PDFtoJSON",
-    platforms: [
-        .macOS(.v10_13), .iOS(.v11)
-    ],
     products: [
         .library( name: "PDFtoJSON", targets: ["PDFtoJSON"] )
     ],
