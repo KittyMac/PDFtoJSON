@@ -24,6 +24,7 @@ let package = Package(
                 .product(name: "Gzip", package: "GzipSwift"),
             ]
         ),
+        .executableTarget(name: "pdfdump", dependencies: ["PDFtoJSON", "Hitch", "Spanker"]),
         .testTarget(
             name: "PDFtoJSONTests",
             dependencies: [

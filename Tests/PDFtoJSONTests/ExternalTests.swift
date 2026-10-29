@@ -9,7 +9,7 @@ private func testdata(path: String) -> String {
 }
 
 private func text(_ root: JsonElement?, _ debug: Bool) -> Hitch {
-    if debug { print(root!.toHitch()) }
+    // if debug { print(root!.toHitch()) }
     guard let pages = root?[element: "pages"] else { return "" }
     return pages.toHitch()
 }
@@ -78,7 +78,7 @@ final class ExternalTests: XCTestCase {
     func testPDF8() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test8.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("NOT WORKING"))
+            XCTAssertTrue(text(root, true).contains("Ordered"))
         }
     }
     
@@ -113,42 +113,42 @@ final class ExternalTests: XCTestCase {
     func testPDF13() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test13.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Thank you for choosing"))
         }
     }
     
     func testPDF14() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test14.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("your monthly statement"))
         }
     }
     
     func testPDF15() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test15.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("CUSTOMER NAME"))
         }
     }
     
     func testPDF16() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test16.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Sezzle Installment"))
         }
     }
     
     func testPDF17() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test17.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Klarna Card"))
         }
     }
     
     func testPDF18() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test18.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Truth in Lending"))
         }
     }
     
@@ -157,42 +157,42 @@ final class ExternalTests: XCTestCase {
     func testPDF20() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test20.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Residential Contract"))
         }
     }
     
     func testPDF21() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test21.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Property Disclosure"))
         }
     }
     
     func testPDF22() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test22.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Affiliated Business"))
         }
     }
     
     func testPDF23() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test23.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Comprehensive Rider"))
         }
     }
     
     func testPDF24() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test24.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Addendum to Contract"))
         }
     }
     
     func testPDF30() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test30.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Loan Number"))
         }
     }
     
@@ -206,14 +206,14 @@ final class ExternalTests: XCTestCase {
     func testPDF32() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test32.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("Day 1"))
         }
     }
     
     func testPDF33() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test33.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Winter Blue Solo Loop"))
+            XCTAssertTrue(text(root, true).contains("ACTIVITY CLASSES"))
         }
     }
     
@@ -227,7 +227,7 @@ final class ExternalTests: XCTestCase {
     func testPDF35() {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test35.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
-            XCTAssertTrue(text(root, true).contains("Chaos"))
+            XCTAssertTrue(text(root, true).contains("merchant for this payment"))
         }
     }
     

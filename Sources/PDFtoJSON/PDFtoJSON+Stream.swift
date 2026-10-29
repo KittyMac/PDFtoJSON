@@ -1,75 +1,46 @@
 import Foundation
 import Spanker
 import Hitch
-import Gzip
 
-fileprivate func predictorPNG(bpp: Int,
-                              rowBytes: Int,
-                              _ start: UnsafeMutablePointer<UInt8>,
-                              _ end: UnsafeMutablePointer<UInt8>) {
-    // https://www.w3.org/TR/PNG-Filters.html
-    // Each row is:
-    // 1-byte: predictor algo used for this row
-    // row bytes amount of data
-    var readPtr = start
-    var readPPtr = start + 1
-    var writePtr = start
-    while readPtr < end {
-        // advance past the algo identifier
-        readPtr += 1
-        
-        switch readPtr[-1] {
-        case 1, 11: // Sub
-            for idx in 0..<rowBytes {
-                writePtr[idx] = readPtr[idx] &+ readPtr[idx - bpp]
-                // print(String(format: "sub: %u = %u + %u", writePtr[idx], readPtr[idx], readPtr[idx - bpp]))
-            }
-            break
-        case 2, 12: // Up
-            if readPtr == start + 1 {
-                for idx in 0..<rowBytes {
-                    writePtr[idx] = readPtr[idx]
-                    // print(String(format: "up: %u = %u + 0", writePtr[idx], readPtr[idx]))
-                }
-            } else {
-                for idx in 0..<rowBytes {
-                    writePtr[idx] = readPtr[idx] &+ readPPtr[idx]
-                    // print(String(format: "up: %u = %u + %u", writePtr[idx], readPtr[idx], readPPtr[idx]))
-                }
-            }
-            break
-        case 3, 13: // Avg
-            print("WARNING: Avg predictor not yet supported")
-            for idx in 0..<rowBytes {
-                writePtr[idx] = readPtr[idx]
-                // print(String(format: "none: %u = %u + 0", writePtr[idx], readPtr[idx]))
-            }
-            break
-        case 4, 14: // Paeth
-            print("WARNING: Peath predictor not yet supported")
-            for idx in 0..<rowBytes {
-                writePtr[idx] = readPtr[idx]
-                // print(String(format: "none: %u = %u + 0", writePtr[idx], readPtr[idx]))
-            }
-            break
-        default: // 0, 10: None
-            for idx in 0..<rowBytes {
-                writePtr[idx] = readPtr[idx]
-                // print(String(format: "none: %u = %u + 0", writePtr[idx], readPtr[idx]))
-            }
-            break
-        }
-        
-        // previous pointer points to the unfiltered bytes of the previous row
-        readPPtr = writePtr
-        
-        // advance the ptr to the algo identifier on the next row
-        writePtr += rowBytes
-        readPtr += rowBytes
-    }
+/// Undecoded stream bytes, kept until somebody asks for the data.
+struct RawStream {
+    let data: HalfHitch
+    let info: JsonElement
+    let id: Int
+    let generation: Int
 }
 
-func getStream(document: JsonElement,
+private let endstreamKeyword: HalfHitch = "endstream"
+
+private func isKeyword(_ ptr: UnsafePointer<UInt8>,
+                       _ end: UnsafePointer<UInt8>,
+                       _ keyword: HalfHitch) -> Bool {
+    guard end - ptr >= keyword.count, let raw = keyword.raw() else { return false }
+    return memcmp(ptr, raw, keyword.count) == 0
+}
+
+/// Is "endstream" the next token at ptr (after optional whitespace)?
+private func endstreamFollows(_ ptr: UnsafePointer<UInt8>,
+                              _ end: UnsafePointer<UInt8>) -> Bool {
+    var ptr = ptr
+    while ptr < end, ptr[0].isWhitspace() { ptr += 1 }
+    return isKeyword(ptr, end, endstreamKeyword)
+}
+
+/// Position of the next "endstream" at or after ptr.
+private func findEndstream(_ ptr: UnsafePointer<UInt8>,
+                           _ end: UnsafePointer<UInt8>) -> UnsafePointer<UInt8>? {
+    var ptr = ptr
+    while ptr + endstreamKeyword.count <= end {
+        if ptr[0] == .e, isKeyword(ptr, end, endstreamKeyword) {
+            return ptr
+        }
+        ptr += 1
+    }
+    return nil
+}
+
+func getStream(context: PDFContext,
                id: Int,
                generation: Int,
                streamInfo: JsonElement,
@@ -77,124 +48,68 @@ func getStream(document: JsonElement,
                _ ptr: inout UnsafePointer<UInt8>,
                _ start: UnsafePointer<UInt8>,
                _ end: UnsafePointer<UInt8>) -> JsonElement? {
-    guard ptr + 6 <= end,
-          ptr[0] == .s,
-          ptr[1] == .t,
-          ptr[2] == .r,
-          ptr[3] == .e,
-          ptr[4] == .a,
-          ptr[5] == .m else {
+    guard isKeyword(ptr, end, "stream") else {
         return fail("stream not on open stream")
     }
     ptr += 6
-    
-    if ptr[0] == .carriageReturn {
-        ptr += 1
-    }
-    guard ptr[0] == .lineFeed else { return fail("stream does not have a newline") }
-    ptr += 1
-    
-    guard let lengthObj = reify(document: document,
-                                reference: streamInfo[element: "Length"],
-                                parentInfo: parentInfo,
-                                start, end) else { return fail("failed to reify length") }
-    guard let length = lengthObj.intValue else { return fail("failed to get stream length") }
-        
-    var streamContent = HalfHitch(sourceObject: nil,
-                                  raw: ptr,
-                                  count: length,
-                                  from: 0,
-                                  to: length)
 
-    let (error, newStreamContent) = decrypt(document: document,
-                                            id: id,
-                                            generation: generation,
-                                            content: streamContent)
-    if let error = error {
-        return fail(error)
-    }
-    
-    streamContent = newStreamContent ?? streamContent
-    
-    var filter: HalfHitch? = streamInfo[halfhitch: "Filter"]
-    
-    if let filterArray = streamInfo[element: "Filter"],
-       filterArray.type == .array,
-       let first = filterArray[element: 0],
-       first.type == .string {
-        filter = first.halfHitchValue
-    }
-    
-    if filter == "FlateDecode" {
-        var rowBytes = 0
-        var bpp = 0
-        var predictor = 0
-        if let decodeParams = streamInfo[element: "DecodeParms"] {
-            predictor = decodeParams[int: "Predictor"] ?? 0
-            if predictor >= 10 && predictor <= 15 {
-                let bpc = decodeParams[int: "BitsPerComponent"] ?? 8
-                let colors = decodeParams[int: "Colors"] ?? 1
-                let columns = decodeParams[int: "Columns"] ?? 1
-                bpp = (bpc * colors + 7) / 8
-                rowBytes = (bpc * colors * columns + 7) / 8
-            }
-        }
-        
-        
-            
-        if let decompressed = try? streamContent.dataNoCopy().gunzipped() {
-            let dataAsHitch = Hitch(data: decompressed)
-            
-            // TIFF predictor
-            if predictor == 2 {
-                print("WARNING: TIFF predictor not yet supported")
-            }
-            
-            // PNG predictor
-            if predictor >= 10 && predictor <= 15,
-               let start = dataAsHitch.mutableRaw() {
-                let end = start + dataAsHitch.count
-                predictorPNG(bpp: bpp,
-                             rowBytes: rowBytes,
-                             start, end)
-            }
-            
-            streamContent = dataAsHitch.halfhitch()
-        }
-    }
-    
-    if let content = reify(document: document,
-                           id: -1,
-                           generation: -1,
-                           objectInfo: streamInfo,
-                           parentInfo: parentInfo,
-                           unknown: streamContent) {
-        streamInfo.set(key: "content", value: content)
-        // streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+    // The keyword should be followed by CRLF or LF; tolerate CR alone and trailing spaces
+    while ptr < end, ptr[0] == .space || ptr[0] == .tab { ptr += 1 }
+    if ptr < end, ptr[0] == .carriageReturn { ptr += 1 }
+    if ptr < end, ptr[0] == .newLine { ptr += 1 }
+    let dataStart = ptr
+
+    // Trust /Length only if "endstream" is where it says; otherwise search for it
+    var length = -1
+    if let declared = resolve(context, streamInfo[element: "Length"])?.intValue,
+       declared >= 0,
+       declared <= end - dataStart,
+       endstreamFollows(dataStart + declared, end) {
+        length = declared
+    } else if let endstream = findEndstream(dataStart, end) {
+        var dataEnd = endstream
+        // the EOL before endstream is not part of the data
+        if dataEnd > dataStart, dataEnd[-1] == .newLine { dataEnd -= 1 }
+        if dataEnd > dataStart, dataEnd[-1] == .carriageReturn { dataEnd -= 1 }
+        length = dataEnd - dataStart
+        context.warn("object \(id): stream /Length is wrong or missing, found endstream instead")
     } else {
-        // streamInfo.set(key: "__content", value: streamContent.base64Encoded())
+        length = end - dataStart
+        context.warn("object \(id): stream has no endstream")
     }
-        
-    ptr += length
-    
-    while ptr < end && ptr[0].isWhitspace() {
-        ptr += 1
+
+    let raw = HalfHitch(sourceObject: nil,
+                        raw: dataStart,
+                        count: length,
+                        from: 0,
+                        to: length)
+    if id >= 0 {
+        context.rawStreams[id] = RawStream(data: raw, info: streamInfo, id: id, generation: generation)
+        context.streamData[id] = nil
     }
-    
-    guard ptr + 9 <= end,
-          ptr[0] == .e,
-          ptr[1] == .n,
-          ptr[2] == .d,
-          ptr[3] == .s,
-          ptr[4] == .t,
-          ptr[5] == .r,
-          ptr[6] == .e,
-          ptr[7] == .a,
-          ptr[8] == .m else {
-        return fail("failed to find endstream")
+
+    ptr = dataStart + length
+    while ptr < end, ptr[0].isWhitspace() { ptr += 1 }
+    if isKeyword(ptr, end, endstreamKeyword) {
+        ptr += endstreamKeyword.count
     }
-    
-    ptr += 9
-    
+
     return streamInfo
+}
+
+/// Decrypted and decoded data of the stream held by object `id` (cached).
+func streamData(_ context: PDFContext,
+                id: Int) -> Hitch? {
+    if let cached = context.streamData[id] {
+        return cached
+    }
+    guard let raw = context.rawStreams[id] else { return nil }
+
+    let content = decryptStream(context, raw)
+
+    guard let decoded = decodeFilters(context, streamFilters(context, raw.info), content) else {
+        return nil
+    }
+    context.streamData[id] = decoded
+    return decoded
 }
