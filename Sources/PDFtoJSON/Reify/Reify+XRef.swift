@@ -6,7 +6,7 @@ func isXRef(_ info: JsonElement) -> Bool {
     return info[hitch: "Type"] == "XRef"
 }
 
-private func readField(_ ptr: inout UnsafePointer<UInt8>,
+fileprivate func ptrTo(_ ptr: inout UnsafePointer<UInt8>,
                        _ size: Int) -> Int {
     var value: Int = 0
     for _ in 0..<size {
@@ -16,60 +16,60 @@ private func readField(_ ptr: inout UnsafePointer<UInt8>,
     return value
 }
 
-/// Decode the entries of a cross-reference stream into the context's xref table.
-/// Entries already present (from newer sections) are kept.
-func parseXrefStream(_ context: PDFContext,
-                     info: JsonElement,
-                     data: Hitch) -> Bool {
-    guard let widths = info[element: "W"],
-          let typeSize = widths[int: 0],
-          let field2Size = widths[int: 1],
-          let field3Size = widths[int: 2],
-          typeSize >= 0, field2Size >= 0, field3Size >= 0,
-          typeSize <= 8, field2Size <= 8, field3Size <= 8 else { return false }
-    let entrySize = typeSize + field2Size + field3Size
-    guard entrySize > 0, let start = data.raw() else { return false }
-    let end = start + data.count
-
-    // /Index [first count first count ...], defaulting to [0 Size]
-    var subsections: [(Int, Int)] = []
-    if let index = info[element: "Index"], index.type == .array {
-        var values: [Int] = []
-        for value in index.iterValues {
-            values.append(value.intValue ?? 0)
-        }
-        var idx = 0
-        while idx + 1 < values.count {
-            subsections.append((values[idx], values[idx + 1]))
-            idx += 2
-        }
-    } else {
-        subsections.append((0, info[int: "Size"] ?? 0))
-    }
-
+func reify(document: JsonElement,
+           id: Int,
+           generation: Int,
+           info: JsonElement,
+           xref content: HalfHitch) -> JsonElement? {
+    guard let start = content.raw() else { return nil }
     var ptr = start
-    for (first, count) in subsections {
-        for index in 0..<max(0, count) {
-            guard ptr + entrySize <= end else { return true }
-            // a zero-width type field means type 1
-            let type = typeSize == 0 ? 1 : readField(&ptr, typeSize)
-            let field2 = readField(&ptr, field2Size)
-            let field3 = readField(&ptr, field3Size)
-
-            let id = first + index
-            guard context.xref[id] == nil else { continue }
-            switch type {
-            case 0:
-                context.xref[id] = .free
-            case 1:
-                context.xref[id] = .offset(field2, generation: field3)
-            case 2:
-                context.xref[id] = .compressed(stream: field2, index: field3)
-            default:
-                // unknown types are treated as null references
-                break
+    let end = start + content.count
+    
+    // the "W" field means that the xref table is in a binary
+    // format.
+    // widths[0] is number of bytes for object number
+    // widths[1] is number of bytes for generation number
+    // widths[2] is number of bytes for status
+    guard let widths = info[element: "W"] else {
+        let error = getXrefTable(document: document,
+                                 &ptr, start, end)
+        return ^error
+    }
+    
+    let numObjects = info[int: "Size"] ?? 0
+    
+    guard let typeSize = widths[int: 0] else { return nil }
+    guard let offsetSize = widths[int: 1] else { return nil }
+    guard let generationSize = widths[int: 2] else { return nil }
+    
+    let xref = document[element: "xref"] ?? ^[:]
+    
+    var index = 0
+    while ptr < end && index < numObjects {
+        let type = ptrTo(&ptr, typeSize)
+        let offset = ptrTo(&ptr, offsetSize)
+        let generation = ptrTo(&ptr, generationSize)
+        
+        // NOTE: this is temporary, we should fix to handle very large pdfs with hundreds of thousands of refs
+        if index < 2048 {
+            if type == 0 {
+                // xref.set(key: Hitch(number: index).halfhitch(), value: JsonElement.null())
+            } else {
+                let idxKey = Hitch(number: index).halfhitch()
+                if xref[element: idxKey] == nil {
+                    xref.set(key: idxKey, value: ^[
+                        "offset": offset,
+                        "generation": generation
+                    ])
+                }
             }
         }
+        
+        index += 1
     }
-    return true
+    
+    document.set(key: "xref", value: xref)
+    document.set(key: "trailer", value: info)
+    
+    return nil
 }

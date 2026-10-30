@@ -54,9 +54,9 @@ public struct Matrix3x3 {
     }
 
     public func transform(x: Double, y: Double) -> (x: Double, y: Double) {
-        // (computing y from the already-transformed x was a bug)
-        return (m11 * x + m12 * y + m13,
-                m21 * x + m22 * y + m23)
+        let x = m11 * x + m12 * y + m13
+        let y = m21 * x + m22 * y + m23
+        return (x, y)
     }
 
     public func printMatrix() {
