@@ -1,413 +1,343 @@
-// Encryption code based on  https://github.com/michaelrsweet/pdfio
-
 import Foundation
 import Spanker
 import Hitch
 import CryptoSwift
 
-@usableFromInline
-let sAlT: Hitch = "sAlT"
+// Standard security handler (ISO 32000-1 7.6.3, ISO 32000-2 7.6.4):
+// RC4 40-128 bit (R2-R4), AES-128 (V4 AESV2), AES-256 (V5 R5/R6 AESV3), crypt filters.
 
-@usableFromInline
-let defaultPasswordPadding: [UInt8] = [
+public let ENCRYPTION_TYPE_NONE = 0
+public let ENCRYPTION_TYPE_RC4_40 = 1
+public let ENCRYPTION_TYPE_RC4_128 = 2
+public let ENCRYPTION_TYPE_AES_128 = 3
+public let ENCRYPTION_TYPE_AES_256 = 4
+
+private let passwordPadding: [UInt8] = [
     0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41,
     0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08,
     0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80,
     0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a
 ]
 
-extension Hitchable {
-    @usableFromInline
-    func asArray() -> Array<UInt8> {
-        let buffer = UnsafeBufferPointer(start: raw(), count: count)
-        return Array(buffer)
+enum CryptMethod {
+    case identity
+    case rc4
+    case aesV2
+    case aesV3
+}
+
+struct CryptState {
+    let fileKey: [UInt8]
+    let stringMethod: CryptMethod
+    let streamMethod: CryptMethod
+    let encryptMetadata: Bool
+    /// named crypt filters, for streams that select one with a /Crypt filter
+    let filters: [String: CryptMethod]
+}
+
+// MARK: - Primitives
+
+func rc4(_ key: [UInt8], _ data: [UInt8]) -> [UInt8] {
+    guard key.isEmpty == false else { return data }
+    var s = [UInt8](0...255)
+    var j = 0
+    for i in 0..<256 {
+        j = (j + Int(s[i]) + Int(key[i % key.count])) & 0xFF
+        s.swapAt(i, j)
     }
-    
-    @usableFromInline
-    func asHexString() -> Hitch {
-        let output = Hitch(capacity: count * 2)
-        guard let start = raw() else { return output }
-        var ptr = start
-        let end = start + count
-        while ptr < end {
-            output.append(hex2((ptr[0] >> 4)))
-            output.append(hex2(ptr[0] & 0x0F))
-            ptr += 1
-        }
-        return output
+    var out = [UInt8](repeating: 0, count: data.count)
+    var i = 0
+    j = 0
+    for idx in 0..<data.count {
+        i = (i + 1) & 0xFF
+        j = (j + Int(s[i])) & 0xFF
+        s.swapAt(i, j)
+        out[idx] = data[idx] ^ s[(Int(s[i]) + Int(s[j])) & 0xFF]
+    }
+    return out
+}
+
+/// AES-CBC decrypt with the IV in the first 16 bytes; PKCS#7 padding removed leniently.
+private func aesDecrypt(_ key: [UInt8], _ data: [UInt8]) -> [UInt8]? {
+    guard data.count >= 16 else { return [] }
+    let iv = Array(data[0..<16])
+    let body = data[16..<(16 + (data.count - 16) / 16 * 16)]
+    guard body.isEmpty == false else { return [] }
+    guard let aes = try? AES(key: key, blockMode: CBC(iv: iv), padding: .noPadding),
+          var plain = try? aes.decrypt(Array(body)) else { return nil }
+    if let last = plain.last, last >= 1, last <= 16, Int(last) <= plain.count,
+       plain.suffix(Int(last)).allSatisfy({ $0 == last }) {
+        plain.removeLast(Int(last))
+    }
+    return plain
+}
+
+private func aesNoPadding(_ key: [UInt8], iv: [UInt8], _ data: [UInt8], encrypt: Bool) -> [UInt8]? {
+    guard let aes = try? AES(key: key, blockMode: CBC(iv: iv), padding: .noPadding) else { return nil }
+    return encrypt ? try? aes.encrypt(data) : try? aes.decrypt(data)
+}
+
+// MARK: - Decryption of objects
+
+/// Per-object key for RC4 and AESV2 (Algorithm 1).
+private func objectKey(_ state: CryptState, id: Int, generation: Int, aes: Bool) -> [UInt8] {
+    var input = state.fileKey
+    input.append(UInt8(truncatingIfNeeded: id))
+    input.append(UInt8(truncatingIfNeeded: id >> 8))
+    input.append(UInt8(truncatingIfNeeded: id >> 16))
+    input.append(UInt8(truncatingIfNeeded: generation))
+    input.append(UInt8(truncatingIfNeeded: generation >> 8))
+    if aes {
+        input.append(contentsOf: [0x73, 0x41, 0x6C, 0x54]) // "sAlT"
+    }
+    return Array(input.md5().prefix(min(state.fileKey.count + 5, 16)))
+}
+
+private func decrypt(_ state: CryptState,
+                     method: CryptMethod,
+                     id: Int,
+                     generation: Int,
+                     _ data: [UInt8]) -> [UInt8]? {
+    switch method {
+    case .identity:
+        return data
+    case .rc4:
+        return rc4(objectKey(state, id: id, generation: generation, aes: false), data)
+    case .aesV2:
+        return aesDecrypt(objectKey(state, id: id, generation: generation, aes: true), data)
+    case .aesV3:
+        return aesDecrypt(state.fileKey, data)
     }
 }
 
-func decrypt(document: JsonElement,
-             id: Int,
-             generation: Int,
-             content: HalfHitch) -> (String?, HalfHitch?) {
-    guard id >= 0, generation >= 0 else { return (nil, content) }
-    guard let fileKey = document[hitch: "fileKey"] else { return (nil, content) }
-    guard let encryptionType = document[int: "encryptionType"] else { return (nil, content) }
-    
-    do {
-        
-        switch encryptionType {
-            
-        case ENCRYPTION_TYPE_RC4_40:
-            let rc4 = RC4(key: fileKey.raw()!, len: 16)
-            return (nil, rc4.crypt(content).halfhitch())
-            
-            
-            
-        case ENCRYPTION_TYPE_RC4_128, ENCRYPTION_TYPE_AES_128:
-            let data = Hitch(capacity: 21)
-            data.append(fileKey)
-            data.append(UInt8(truncatingIfNeeded: id))
-            data.append(UInt8(truncatingIfNeeded: id >> 8))
-            data.append(UInt8(truncatingIfNeeded: id >> 16))
-            data.append(UInt8(truncatingIfNeeded: generation))
-            data.append(UInt8(truncatingIfNeeded: generation >> 8))
-            
-            var md5 = MD5()
-            _ = try md5.update(withBytes: data.asArray())
-            if encryptionType == ENCRYPTION_TYPE_AES_128 {
-                _ = try md5.update(withBytes: sAlT.asArray())
-            }
-            let digest = try md5.finish()
-            
-            if encryptionType == ENCRYPTION_TYPE_RC4_128 {
-                let rc4 = RC4(key: digest, len: digest.count)
-                return (nil, rc4.crypt(content).halfhitch())
-            } else {
-                return ("AES 128 encryption not yet implemented", nil)
-            }
-        default:
-            return ("unsupported encryption type", nil)
-        }
-    } catch {
-        return ("\(error)", nil)
+/// Decrypt a string belonging to object `id` (nil `crypt` or id < 0: unchanged).
+func decryptString(_ context: PDFContext,
+                   id: Int,
+                   generation: Int,
+                   _ bytes: Hitch) -> Hitch {
+    guard id >= 0, let state = context.crypt else { return bytes }
+    guard let plain = decrypt(state, method: state.stringMethod, id: id, generation: generation, Array(bytes)) else {
+        context.warn("object \(id): string could not be decrypted")
+        return bytes
     }
-    
-    /*
-    // a) Obtain the object number and generation number from the object identifier of the string or stream to be encrypted
-    // (see 7.3.10, "Indirect Objects"). If the string is a direct object, use the identifier of the indirect object
-    // containing it.
-    guard let id = info[int: "id"] else { return ("failed to get object id for decryption", nil) }
-    guard let generation = info[int: "generation"] else { return ("failed to get object id for decryption", nil) }
-    
-    // b) For all strings and streams without crypt filter specifier; treating the object number and generation number as binary
-    // integers, extend the original -byte encryption key to n + 5 bytes by appending the low-order 3 bytes of the object number
-    // and the low-order 2 bytes of the generation number in that order, low-order byte first. (n is 5 unless the value of V in
-    // the encryption dictionary is greater than 1, in which case n is the value of Length divided by 8.)
-    // If using the AES algorithm, extend the encryption key an additional 4 bytes by adding the value "sAIT" which corresponds
-    // to the hexadecimal values 0x73, 0×41, 0x6C, 0×54. (This addition is done for backward compatibility and is not intended
-    // to provide additional security.)
-    
-    // c) Initialize the MD5 hash function and pass the result of step (b) as input to this function.
-    
-    // d) Use the first (n + 5) bytes, up to a maximum of 16, of the output from the MD5 hash as the key for the RC4 or AES symmetric
-    // key algorithms, along with the string or stream data to be encrypted. If using the AES algorithm, the Cipher Block Chaining (CBC) mode,
-    // which requires an initialization vector, is used. The block size parameter is set to 16 bytes, and the initialization vector is a 16-byte
-    // random number that is stored as the first 16 bytes of the encrypted stream or string. The output is the encrypted data to be stored in the PDF file.
-    */
-    return (nil, content)
+    return Hitch(bytes: plain, offset: 0, count: plain.count)
 }
 
-func generateKeys(document: JsonElement,
-                  encrypt: JsonElement) -> String? {
-    guard document[hitch: "fileKey"] == nil else { return nil }
-    
-    // Filter entry identifies the file's security handler
-    // SubFilter entry specifies the syntax of the encryption dictionary contents
-    // V entry, in specifying which algorithm to use, determines the length of the encryption key,
-    //   on which the encryption (and decryption) of data in a PDF file shall be based
-    // For V values 2 and 3, the Length entry specifies the exact length of the encryption key.
-    // value of 4 for V permits the security handler to use its own encryption and decryption algorithms
-    // and to specify crypt filters to use on specific streams
-    guard let handler = encrypt[string: "Filter"] else { return "encrypt missing filter" }
-    
-    guard let version = encrypt[int: "V"] else { return "encrypt missing version" }
-    // O An algorithm that is undocumented. This value shall not be used.
-    // 1 "Algorithm 1: Encryption of data using the RC4 or AES algorithms" in 7.6.2, "General Encryption Algorithm," with an encryption key length of 40 bits; see below.
-    // 2 (PDF 1.4) "Algorithm 1: Encryption of data using the RC4 or AES algorithms" in 7.6.2, "General Encryption Algorithm," but permitting encryption key lengths greater than 40 bits.
-    // 3 (PDF 1.4) An unpublished algorithm that permits encryption key lengths ranging from 40 to 128 bits. This value shall not appear in a conforming PDF file.
-    // 4 (PDF 1.5) The security handler defines the use of encryption and decryption in the document, using the rules specified by the CF, StmF, and StrF entries.
-    
-    guard let revision = encrypt[int: "R"] else { return "encrypt missing revision" }
-    
-    
-    var length = encrypt[int: "Length"] ?? 40
-    // (Optional; PDF 1.4; only if V is 2 or 3) The length of the encryption key, in bits. The value shall be a multiple of 8, in the range 40 to 128. Default value: 40.
-    
-    
-    // CF:
-    // (Optional; meaningful only when the value of V is 4; PDF 1.5) A dictionary whose keys shall be crypt filter names and whose values shall be the corresponding crypt
-    // filter dictionaries (see Table 25). Every crypt filter used in the document shall have an entry in this dictionary, except for the standard crypt filter names (see Table 26).
-    // The conforming reader shall ignore entries in CF dictionary with the keys equal to those listed in Table 26 and use properties of the respective standard crypt filters.
-    
-    // StmF:
-    // (Optional; meaningful only when the value of V is 4; PDF 1.5) The name of the crypt filter that shall be used by default when decrypting streams. The name shall be a key in
-    // the CF dictionary or a standard crypt filter name specified in Table 26.
-    // All streams in the document, except for cross-reference streams (see 7.5.8, "Cross-Reference Streams") or streams that have a Crypt entry in their Filter array (see Table 6),
-    // shall be decrypted by the security handler, using this crypt filter.
-    // Default value: Identity.
-    
-    // StrF
-    // (Optional; meaningful only when the value of V is 4; PDF 1.5) The name of the crypt filter that shall be used when decrypting all strings in the document. The name shall be a
-    // key in the CF dictionary or a standard crypt filter name specified in Table 26.
-    // Default value: Identity.
-    
-    // EFF:
-    // (Optional; meaningful only when the value of V is 4; PDF 1.6) The name of the crypt filter that shall be used when encrypting embedded file streams that do not have their own crypt filter specifier;
-    // it shall correspond to a key in the CF dictionary or a standard crypt filter name specified in Table 26. This entry shall be provided by the security handler. Conforming writers shall respect this
-    // value when encrypting embedded files, except for embedded file streams that have their own crypt filter specifier. If this entry is not present, and the embedded file stream does not contain a crypt
-    // filter specifier, the stream shall be encrypted using the default stream crypt filter specified by StmF.
-    
-    
-    guard handler == "Standard" else { return "unsupported encryption filter" }
-    
-    var encryptionType: Int = ENCRYPTION_TYPE_NONE
-    
-    if version == 1 || version == 2 || version == 3 {
-        // length contains the length of the encryption key
-        if revision == 2 {
-            // RC4 / 40
-            length = 40
-            encryptionType = ENCRYPTION_TYPE_RC4_40
-        } else if revision == 3 {
-            // RC4 / 128
-            if length < 40 || length > 128 {
-                length = 128
-            }
-            encryptionType = length == 40 ? ENCRYPTION_TYPE_RC4_40 : ENCRYPTION_TYPE_RC4_128
-        }
-    } else if (version == 6 && revision == 6) {
-        // AES / 256
-        encryptionType = ENCRYPTION_TYPE_AES_256
+/// Decrypt the raw data of a stream, honoring /Crypt filters and unencrypted metadata.
+func decryptStream(_ context: PDFContext,
+                   _ raw: RawStream) -> Hitch {
+    guard let state = context.crypt else { return raw.data.hitch() }
+
+    if isXRef(raw.info) {
+        return raw.data.hitch()
     }
-    
-    guard encryptionType != ENCRYPTION_TYPE_NONE else { return "unsupported encryption type \(version) / \(revision)" }
-    
-    
+    if state.encryptMetadata == false, raw.info[hitch: "Type"] == "Metadata" {
+        return raw.data.hitch()
+    }
+
+    var method = state.streamMethod
+    // a /Crypt entry in the filter list selects a named crypt filter
+    for (name, parms) in streamFilters(context, raw.info) where name == HalfHitch("Crypt") {
+        let filterName = parms?[string: "Name"] ?? "Identity"
+        method = filterName == "Identity" ? .identity : (state.filters[filterName] ?? method)
+    }
+
+    guard let plain = decrypt(state, method: method, id: raw.id, generation: raw.generation, Array(raw.data)) else {
+        context.warn("object \(raw.id): stream could not be decrypted")
+        return raw.data.hitch()
+    }
+    return Hitch(bytes: plain, offset: 0, count: plain.count)
+}
+
+// MARK: - Key derivation
+
+private func padded(_ password: [UInt8]) -> [UInt8] {
+    return Array((password.prefix(32) + passwordPadding).prefix(32))
+}
+
+private func le32(_ value: Int) -> [UInt8] {
+    let v = UInt32(truncatingIfNeeded: value)
+    return [UInt8(v & 0xFF), UInt8((v >> 8) & 0xFF), UInt8((v >> 16) & 0xFF), UInt8((v >> 24) & 0xFF)]
+}
+
+/// Algorithm 2: file key from a (user) password, revisions 2-4.
+private func fileKeyR4(password: [UInt8], o: [UInt8], p: Int, id0: [UInt8],
+                       revision: Int, length: Int, encryptMetadata: Bool) -> [UInt8] {
+    var input = padded(password)
+    input += o.prefix(32)
+    input += le32(p)
+    input += id0
+    if revision >= 4 && encryptMetadata == false {
+        input += [0xFF, 0xFF, 0xFF, 0xFF]
+    }
+    var digest = input.md5()
+    if revision >= 3 {
+        for _ in 0..<50 {
+            digest = Array(digest.prefix(length)).md5()
+        }
+    }
+    return Array(digest.prefix(length))
+}
+
+/// Algorithm 6: does `key` validate against /U?
+private func checkUserKeyR4(_ key: [UInt8], u: [UInt8], id0: [UInt8], revision: Int) -> Bool {
+    if revision == 2 {
+        return rc4(key, passwordPadding) == Array(u.prefix(32))
+    }
+    var x = rc4(key, (passwordPadding + id0).md5())
+    for i in 1...19 {
+        x = rc4(key.map { $0 ^ UInt8(i) }, x)
+    }
+    return Array(x.prefix(16)) == Array(u.prefix(16))
+}
+
+/// Algorithm 7: recover the padded user password from an owner password.
+private func userPasswordFromOwnerR4(owner: [UInt8], o: [UInt8], revision: Int, length: Int) -> [UInt8] {
+    var digest = padded(owner).md5()
+    if revision >= 3 {
+        for _ in 0..<50 { digest = digest.md5() }
+    }
+    let key = Array(digest.prefix(revision == 2 ? 5 : length))
+    if revision == 2 {
+        return rc4(key, Array(o.prefix(32)))
+    }
+    var x = Array(o.prefix(32))
+    for i in stride(from: 19, through: 0, by: -1) {
+        x = rc4(key.map { $0 ^ UInt8(i) }, x)
+    }
+    return x
+}
+
+/// Algorithm 2.A/2.B: password hash for revisions 5 and 6.
+private func hashR6(password: [UInt8], salt: [UInt8], udata: [UInt8], revision: Int) -> [UInt8] {
+    var k = (password + salt + udata).sha256()
+    guard revision >= 6 else { return k }
+
+    var round = 0
+    while true {
+        var k1: [UInt8] = []
+        let block = password + k + udata
+        k1.reserveCapacity(block.count * 64)
+        for _ in 0..<64 { k1 += block }
+        guard let e = aesNoPadding(Array(k[0..<16]), iv: Array(k[16..<32]), k1, encrypt: true) else { return k }
+        let remainder = e.prefix(16).reduce(0) { ($0 + Int($1)) } % 3
+        switch remainder {
+        case 0: k = e.sha256()
+        case 1: k = e.sha384()
+        default: k = e.sha512()
+        }
+        round += 1
+        if round >= 64, let last = e.last, Int(last) <= round - 32 {
+            break
+        }
+    }
+    return Array(k.prefix(32))
+}
+
+private func cryptMethod(_ name: String?, filters: [String: CryptMethod]) -> CryptMethod {
+    guard let name = name, name != "Identity" else { return .identity }
+    return filters[name] ?? .identity
+}
+
+/// Set up decryption from the /Encrypt dictionary. Returns an error message if the
+/// file cannot be decrypted (unsupported handler or wrong/missing password).
+func setupEncryption(_ context: PDFContext,
+                     encrypt: JsonElement,
+                     password: String?) -> String? {
+    guard encrypt[string: "Filter"] == "Standard" else {
+        return "unsupported security handler \(encrypt[string: "Filter"] ?? "(none)")"
+    }
+    let version = encrypt[int: "V"] ?? 0
+    let revision = encrypt[int: "R"] ?? 0
+    let encryptMetadata = encrypt[element: "EncryptMetadata"]?.boolValue ?? true
     let permissions = encrypt[int: "P"] ?? 0
-    
-    guard let ownerKey = encrypt[hitch: "O"] else { return "missing owner key" }
-    guard ownerKey.count >= 32 else { return "malformed owner key" }
-    guard let userKey = encrypt[hitch: "U"] else { return "missing user key" }
-    guard userKey.count >= 32 else { return "malformed user key" }
-    
-    //print("ownerKey[\(ownerKey.count)]: \(ownerKey.asHexString())")
-    //print("userKey[\(userKey.count)]: \(userKey.asHexString())")
-    
-    guard let trailer = document[element: "trailer"] else { return "trailer missing" }
-    guard let fileIdArray = trailer[element: "ID"] else { return "file id array missing" }
-    guard let fileIdData = fileIdArray[hitch: 0]?.base64Decoded() else { return "file id missing" }
-    let fileId = HalfHitch(data: fileIdData)
-        
-    // Generate keys to see if things match...
-    let password = document[hitch: "password"]
-    let paddedPassword = pad(password: password)
-    
-    //print("Trying: \(paddedPassword.asHexString())")
-    //print("P: \(permissions)")
-    //print("Fid[\(fileId.count)]: \(fileId.asHexString())")
-    
-    guard let userPad = try? makeOwnerKey(encryptionType: encryptionType,
-                                          ownerPad: paddedPassword,
-                                          userPad: ownerKey) else {
-        return "failed to make padded user key"
-    }
-    //print("Upad[\(userPad.count)]: \(userPad.asHexString())")
 
-    guard let fileKey = try? makeFileKey(encryptionType: encryptionType,
-                                         permissions: permissions,
-                                         fileId: fileId,
-                                         userPad: userPad,
-                                         ownerKey: ownerKey) else {
-        return "failed to make file key"
-    }
-    //print("Fown[\(fileKey.count)]: \(fileKey.asHexString())")
-    
-    guard let ownUserKey = try? makeUserKey(fileId: fileId) else {
-        return "failed to make own user key"
-    }
-    //print("U[\(userKey.count)]: \(userKey.asHexString())")
-    //print("Uown[\(ownUserKey.count)]: \(ownUserKey.asHexString())")
-    
-    // Check if we have a match
-    if userKey == ownerKey {
-        document.set(key: "encryptionType", value: encryptionType)
-        document.set(key: "fileKey", value: fileKey)
-        document.set(key: "password", value: paddedPassword)
-        return nil
-    }
-    
-    // Not the owner password, try the user password...
-    guard let fileKey = try? makeFileKey(encryptionType: encryptionType,
-                                         permissions: permissions,
-                                         fileId: fileId,
-                                         userPad: paddedPassword,
-                                         ownerKey: ownerKey) else {
-        return "failed to make file key"
-    }
-    //print("Fuse[\(fileKey.count)]: \(fileKey.asHexString())")
-
-    guard let ownUserKey = try? makeUserKey(fileId: fileId) else {
-        return "failed to make own user key"
-    }
-    
-    guard let pdfUserKey = try? decryptUserKey(encryptionType: encryptionType,
-                                               fileKey: fileKey,
-                                               userKey: userKey) else {
-        return "failed to decrypt user key"
-    }
-    
-    //print("Uuse[\(userKey.count)]: \(userKey.asHexString())")
-    //print("Updf[\(pdfUserKey.count)]: \(pdfUserKey.asHexString())")
-    
-    if pdfUserKey == paddedPassword || ownUserKey.substring(0, 16) == pdfUserKey.substring(0, 16) {
-        document.set(key: "encryptionType", value: encryptionType)
-        document.set(key: "fileKey", value: fileKey)
-        document.set(key: "password", value: paddedPassword)
-        return nil
+    guard let o = stringBytes(encrypt[element: "O"]).map(Array.init),
+          let u = stringBytes(encrypt[element: "U"]).map(Array.init) else {
+        return "encryption dictionary is missing /O or /U"
     }
 
-    return "failed to generate valid decryption keys"
-}
+    // Crypt filters (V4/V5); V1-V3 always use RC4 for everything
+    var filters: [String: CryptMethod] = [:]
+    var stringMethod = CryptMethod.rc4
+    var streamMethod = CryptMethod.rc4
+    var length = version == 1 ? 5 : max(5, min(16, (encrypt[int: "Length"] ?? 40) / 8))
 
-@usableFromInline
-func pad(password: Hitch?) -> Hitch {
-    let padded = Hitch(capacity: 32)
-
-    if let password = password {
-        padded.append(password)
-        padded.count = min(padded.count, 32)
-    }
-    
-    for idx in 0..<32 {
-        if padded.count <= idx {
-            padded.append(defaultPasswordPadding[idx])
-        }
-    }
-    return padded
-}
-
-@usableFromInline
-func makeOwnerKey(encryptionType: Int,
-                  ownerPad: Hitch,
-                  userPad: Hitch) throws -> Hitch {
-    // Hash the owner password...
-    var md5 = MD5()
-    _ = try md5.update(withBytes: ownerPad.asArray())
-    var digest = try md5.finish()
-    
-    if encryptionType != ENCRYPTION_TYPE_RC4_40 {
-        for _ in 0..<50 {
-            var md5 = MD5()
-            _ = try md5.update(withBytes: digest)
-            digest = try md5.finish()
-        }
-    }
-    
-    // Copy and encrypt the padded user password...
-    var ownerKey = userPad
-    ownerKey.count = 32
-    
-    if encryptionType == ENCRYPTION_TYPE_RC4_40 {
-        let rc4 = RC4(key: digest, len: 5)
-        ownerKey = rc4.crypt(ownerKey)
-    } else {
-        // RC4 encryption key
-        let encryptKey = Hitch(string: "0123456789012345")
-        for i in 0..<20 {
-            // XOR each byte in the digest with the loop counter to make a key...
-            for j in 0..<16 {
-                encryptKey[j] = digest[j] ^ UInt8(i)
+    if version >= 4 {
+        if let cf = encrypt[element: "CF"], cf.type == .dictionary {
+            for (name, filter) in cf.iterWalking {
+                switch filter[string: "CFM"] {
+                case "V2": filters[name.toString()] = .rc4
+                case "AESV2": filters[name.toString()] = .aesV2
+                case "AESV3": filters[name.toString()] = .aesV3
+                default: filters[name.toString()] = .identity
+                }
+                if let bits = filter[int: "Length"] {
+                    // Length is in bytes for crypt filters in practice, sometimes bits
+                    length = bits > 32 ? bits / 8 : bits
+                }
             }
-            
-            let rc4 = RC4(key: encryptKey.raw()!, len: encryptKey.count)
-            ownerKey = rc4.crypt(ownerKey)
         }
+        stringMethod = cryptMethod(encrypt[string: "StrF"], filters: filters)
+        streamMethod = cryptMethod(encrypt[string: "StmF"], filters: filters)
+        if version == 4 { length = 16 }
     }
-    
-    return ownerKey
-}
 
-@usableFromInline
-func makeFileKey(encryptionType: Int,
-                 permissions: Int,
-                 fileId: HalfHitch,
-                 userPad: Hitch,
-                 ownerKey: Hitch) throws -> Hitch {
-    let permission0 = Int8(truncatingIfNeeded: permissions)
-    let permission1 = Int8(truncatingIfNeeded: permissions >> 8)
-    let permission2 = Int8(truncatingIfNeeded: permissions >> 16)
-    let permission3 = Int8(truncatingIfNeeded: permissions >> 24)
-    let permissionBytes: [UInt8] = [
-        UInt8(bitPattern: permission0),
-        UInt8(bitPattern: permission1),
-        UInt8(bitPattern: permission2),
-        UInt8(bitPattern: permission3)
-    ]
-    
-    var md5 = MD5()
-    _ = try md5.update(withBytes: userPad.asArray())
-    _ = try md5.update(withBytes: ownerKey.asArray())
-    _ = try md5.update(withBytes: permissionBytes)
-    _ = try md5.update(withBytes: fileId.asArray())
-    var digest = try md5.finish()
-    
-    if encryptionType != ENCRYPTION_TYPE_RC4_40 {
-        // MD5 the result 50 times..
-        for _ in 0..<50 {
-            var md5 = MD5()
-            _ = try md5.update(withBytes: digest)
-            digest = try md5.finish()
+    let passwordBytes = Array((password ?? "").utf8)
+    var fileKey: [UInt8]? = nil
+
+    if revision >= 5 {
+        // AES-256: /U and /O are 48 bytes (hash, validation salt, key salt)
+        guard u.count >= 48, o.count >= 48,
+              let ue = stringBytes(encrypt[element: "UE"]).map(Array.init),
+              let oe = stringBytes(encrypt[element: "OE"]).map(Array.init),
+              ue.count >= 32, oe.count >= 32 else {
+            return "encryption dictionary is missing AES-256 key data"
         }
-    }
-    
-    return Hitch(bytes: digest, offset: 0, count: 16)
-}
+        let pw = Array(passwordBytes.prefix(127))
+        let u48 = Array(u.prefix(48))
+        let zeroIV = [UInt8](repeating: 0, count: 16)
 
-@usableFromInline
-func makeUserKey(fileId: HalfHitch) throws -> Hitch {
-
-    var md5 = MD5()
-    _ = try md5.update(withBytes: defaultPasswordPadding)
-    _ = try md5.update(withBytes: fileId.asArray())
-    let userKey = try md5.finish()
-        
-    let userKeyHitch = Hitch(bytes: userKey, offset: 0, count: 16)
-    for _ in 0..<16 {
-        userKeyHitch.append(0)
-    }
-    return userKeyHitch
-}
-
-@usableFromInline
-func decryptUserKey(encryptionType: Int,
-                    fileKey: Hitch,
-                    userKey: Hitch) throws -> Hitch {
-    var userKey = userKey
-    userKey.count = 32
-
-    if encryptionType == ENCRYPTION_TYPE_RC4_40 {
-        let rc4 = RC4(key: fileKey.raw()!, len: 5)
-        userKey = rc4.crypt(userKey)
+        if hashR6(password: pw, salt: Array(o[32..<40]), udata: u48, revision: revision) == Array(o.prefix(32)) {
+            let key = hashR6(password: pw, salt: Array(o[40..<48]), udata: u48, revision: revision)
+            fileKey = aesNoPadding(key, iv: zeroIV, Array(oe.prefix(32)), encrypt: false)
+        } else if hashR6(password: pw, salt: Array(u[32..<40]), udata: [], revision: revision) == Array(u.prefix(32)) {
+            let key = hashR6(password: pw, salt: Array(u[40..<48]), udata: [], revision: revision)
+            fileKey = aesNoPadding(key, iv: zeroIV, Array(ue.prefix(32)), encrypt: false)
+        }
+        if version < 5 || filters.isEmpty {
+            stringMethod = .aesV3
+            streamMethod = .aesV3
+        }
     } else {
-        // RC4 encryption key
-        let encryptKey = Hitch(string: "0123456789012345")
-        for i in stride(from: 19, to: 0, by: -1) {
-            // XOR each byte in the digest with the loop counter to make a key...
-            for j in 0..<16 {
-                encryptKey[j] = fileKey[j] ^ UInt8(i)
-            }
-            
-            let rc4 = RC4(key: encryptKey.raw()!, len: 16)
-            userKey = rc4.crypt(userKey)
-        }
-        
-        let rc4 = RC4(key: fileKey.raw()!, len: 16)
-        userKey = rc4.crypt(userKey)
+        guard revision >= 2 else { return "unsupported encryption revision \(revision)" }
+        let id0 = context.trailer?[element: "ID"].flatMap { stringBytes($0[element: 0]) }.map(Array.init) ?? []
+        if revision == 2 { length = 5 }
 
+        // the password as a user password
+        let userKey = fileKeyR4(password: passwordBytes, o: o, p: permissions, id0: id0,
+                                revision: revision, length: length, encryptMetadata: encryptMetadata)
+        if checkUserKeyR4(userKey, u: u, id0: id0, revision: revision) {
+            fileKey = userKey
+        } else {
+            // the password as an owner password
+            let userPassword = userPasswordFromOwnerR4(owner: passwordBytes, o: o, revision: revision, length: length)
+            let ownerKey = fileKeyR4(password: userPassword, o: o, p: permissions, id0: id0,
+                                     revision: revision, length: length, encryptMetadata: encryptMetadata)
+            if checkUserKeyR4(ownerKey, u: u, id0: id0, revision: revision) {
+                fileKey = ownerKey
+            }
+        }
     }
-    
-    return userKey
+
+    guard let key = fileKey else {
+        return password == nil ? "document requires a password" : "incorrect password"
+    }
+
+    context.crypt = CryptState(fileKey: key,
+                               stringMethod: stringMethod,
+                               streamMethod: streamMethod,
+                               encryptMetadata: encryptMetadata,
+                               filters: filters)
+    return nil
 }

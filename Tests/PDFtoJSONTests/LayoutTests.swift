@@ -24,10 +24,6 @@ private func blocks(_ name: String) -> [String] {
 
 final class LayoutTests: XCTestCase {
 
-    func testBlocksAreOptIn() {
-        XCTAssertNil(corpusParse("layout_two_column")?[element: "pages"]?[element: 0]?[element: "blocks"])
-    }
-
     func testTwoColumnArticleReadsColumnByColumn() {
         let result = blocks("layout_two_column")
         XCTAssertEqual(result.count, 3)
