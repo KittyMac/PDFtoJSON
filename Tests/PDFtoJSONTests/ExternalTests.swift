@@ -244,4 +244,11 @@ final class ExternalTests: XCTestCase {
             XCTAssertTrue(text(root, false).contains("RECHNUNG"))
         }
     }
+    
+    func testPDF38() {
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test38.pdf")) else { return }
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            XCTAssertTrue(text(root, true).contains("RECHNUNG"))
+        }
+    }
 }
