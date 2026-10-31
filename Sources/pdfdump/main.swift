@@ -16,6 +16,7 @@ while let arg = args.next() {
     switch arg {
     case "--text": mode = "text"
     case "--json": mode = "json"
+    case "--blocks": mode = "blocks"
     case "--password": password = args.next()
     default: paths.append(arg)
     }
@@ -25,13 +26,27 @@ for path in paths {
     let name = (path as NSString).lastPathComponent
     guard let pdf = Hitch(contentsOfFile: path) else { print("\(name): unreadable"); continue }
     let t0 = Date()
-    let root: JsonElement? = PDFtoJSON.parsed(hitch: pdf, options: PDFtoJSON.Options(password: password, includeParseDate: false)) { $0 }
+    let root: JsonElement? = PDFtoJSON.parsed(hitch: pdf, options: PDFtoJSON.Options(password: password, includeParseDate: false, textBlocks: mode == "blocks")) { $0 }
     let elapsed = Date().timeIntervalSince(t0)
     guard let root = root else { print("\(name): PARSE FAILED (nil)"); continue }
 
     switch mode {
     case "json":
         print(root.toString(pretty: true))
+    case "blocks":
+        var pagesOut: [String] = []
+        for page in root[element: "pages"]?.iterValues ?? JsonElement(unknown: []).iterValues {
+            var blocks: [String] = []
+            for block in page[element: "blocks"]?.iterValues ?? JsonElement(unknown: []).iterValues {
+                var items: [String] = []
+                for t in block[element: "text"]?.iterValues ?? JsonElement(unknown: []).iterValues {
+                    items.append(t[string: "text"] ?? "")
+                }
+                blocks.append(items.joined(separator: "\n"))
+            }
+            pagesOut.append(blocks.joined(separator: "\n\n"))
+        }
+        print(pagesOut.joined(separator: "\u{0C}"))
     case "text":
         var pagesOut: [String] = []
         for page in root[element: "pages"]?.iterValues ?? JsonElement(unknown: []).iterValues {

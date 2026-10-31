@@ -19,11 +19,16 @@ public enum PDFtoJSON {
         /// Include "__parse_date" (seconds since 1970) in the output. Turn off for
         /// output that is identical across runs.
         public var includeParseDate: Bool
+        /// Also output each page's text grouped into "blocks" (columns, boxes,
+        /// paragraphs) in reading order.
+        public var textBlocks: Bool
 
         public init(password: String? = nil,
-                    includeParseDate: Bool = true) {
+                    includeParseDate: Bool = true,
+                    textBlocks: Bool = true) {
             self.password = password
             self.includeParseDate = includeParseDate
+            self.textBlocks = textBlocks
         }
     }
 

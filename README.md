@@ -25,7 +25,8 @@ Entry points accept `Hitch`, `HalfHitch`, `Data` or `String`. The `JsonElement` 
 
 ```swift
 let options = PDFtoJSON.Options(password: "secret",        // user or owner password
-                                includeParseDate: false)   // identical output across runs
+                                includeParseDate: false,   // identical output across runs
+                                textBlocks: true)          // add "blocks" (reading order)
 PDFtoJSON.parsed(hitch: pdf, options: options) { root in ... }
 ```
 
@@ -54,6 +55,7 @@ Encrypted files with an empty user password (the common "restrictions only" case
 ```
 
 - **pages**: in document order. Each text item is a run of text on one line. `x`/`y` are the start of its baseline in points, measured from the lower-left corner of the visible page box (CropBox, else MediaBox) with the page's `/Rotate` applied, so `y` grows upward. Items are sorted top to bottom, then left to right. `width`/`height` are the visible box's size after rotation.
+- **blocks** (with `textBlocks: true`): the same lines grouped into blocks (columns, boxes, paragraphs, tables) in reading order: `[{ "x", "y", "width", "height", "text": [ { "x", "y", "text" } ] }]`, where `x`/`y` is the block's lower-left corner. Use this for multi-column pages, sidebars and side-by-side boxes, where `text`'s top-to-bottom order interleaves columns. See "Reading order" below.
 - **info**: the document information dictionary.
 - **objects**: every object that was loaded, keyed by object number. Indirect references are `{ "id", "generation" }`. Names are written without the slash.
 - **Strings** are decoded to text (UTF-16 with a byte-order mark, UTF-8, else PDFDocEncoding). Strings that aren't text are written as `"<HEX>"`; in the trailer and the Encrypt dictionary every string is written that way so binary values (IDs, keys) are lossless.
@@ -69,6 +71,17 @@ Encrypted files with an empty user password (the common "restrictions only" case
 **Encryption**: the standard security handler: RC4 40–128 bit, AES-128, AES-256 (R5 and R6), crypt filters.
 
 **Text**: Type1, TrueType, Type3 and Type0 (CID) fonts; ToUnicode CMaps; standard, WinAnsi, MacRoman, Symbol and ZapfDingbats encodings with `/Differences` resolved through the Adobe Glyph List; standard 14 font metrics; Form XObjects; the full text state (character/word spacing, scaling, leading, rise).
+
+## Reading order
+
+`blocks` come from recursive XY-cut: a region is split at a vertical gutter (an empty strip through its full height) or at a horizontal gap larger than its usual line spacing, and the pieces are visited top to bottom, left to right. When the lines on both sides of a gutter share baselines, the layout is ambiguous, and it is resolved like this:
+
+- a side of short right-aligned values (amounts), or a side that is itself a table, is read row by row with its labels;
+- two sides of long lines (article columns) are read one after the other;
+- two sides that each start with a larger heading (side-by-side boxes such as "Pickup" and "Return") are read one after the other;
+- anything else (label : value forms) is read row by row.
+
+Headings are recognized by size only, not weight, and drawn rules and boxes are not used, so layouts that rely on those cues alone can still be read in the wrong order.
 
 ## Limitations
 

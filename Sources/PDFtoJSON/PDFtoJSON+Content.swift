@@ -105,38 +105,22 @@ private final class TextCollector {
                               across: across, end: along + advance, size: size))
     }
 
-    /// Items sorted top to bottom, then left to right.
-    func output() -> JsonElement {
-        var results: [(y: Double, x: Double, size: Double, text: String)] = []
+    /// Lines with their extents.
+    func lines() -> [TextLine] {
+        var lines: [TextLine] = []
         for item in items {
             var text = String(String.UnicodeScalarView(item.scalars.compactMap(Unicode.Scalar.init)))
             text = text.trimmingCharacters(in: .whitespaces)
             guard text.isEmpty == false else { continue }
-            results.append((item.y, item.x, item.size, text))
+            let horizontal = item.dx > 0.99
+            lines.append(TextLine(x: item.x,
+                                  x1: horizontal ? item.end : item.x,
+                                  y: item.y,
+                                  size: item.size,
+                                  text: text,
+                                  horizontal: horizontal))
         }
-
-        results.sort { $0.y > $1.y }
-        // rows: items whose baselines are within a fraction of the font size
-        var ordered: [(y: Double, x: Double, size: Double, text: String)] = []
-        var row: [(y: Double, x: Double, size: Double, text: String)] = []
-        for item in results {
-            if let first = row.first, first.y - item.y > max(1.0, 0.3 * min(first.size, item.size)) {
-                ordered.append(contentsOf: row.sorted { $0.x < $1.x })
-                row = []
-            }
-            row.append(item)
-        }
-        ordered.append(contentsOf: row.sorted { $0.x < $1.x })
-
-        let output = JsonElement(unknown: [])
-        for item in ordered {
-            let element = JsonElement(unknown: [:])
-            element.set(key: "x", value: Int(item.x.rounded(.down)))
-            element.set(key: "y", value: Int(item.y.rounded(.down)))
-            element.set(key: "text", value: item.text)
-            output.append(value: element)
-        }
-        return output
+        return lines
     }
 }
 
@@ -378,14 +362,22 @@ private final class Interpreter {
     }
 }
 
-/// Text items of a content stream (or a page's concatenated content streams).
+/// Lines of a content stream (or a page's concatenated content streams).
+func extractLines(_ context: PDFContext?,
+                  content: HalfHitch,
+                  resources: JsonElement?,
+                  matrix: Matrix = .identity) -> [TextLine] {
+    let interpreter = Interpreter(context)
+    interpreter.run(content, resources: resources, ctm: matrix)
+    return interpreter.collector.lines()
+}
+
+/// Text items of a content stream, sorted top to bottom, then left to right.
 func extractText(_ context: PDFContext?,
                  content: HalfHitch,
                  resources: JsonElement?,
                  matrix: Matrix = .identity) -> JsonElement {
-    let interpreter = Interpreter(context)
-    interpreter.run(content, resources: resources, ctm: matrix)
-    return interpreter.collector.output()
+    return textElements(extractLines(context, content: content, resources: resources, matrix: matrix))
 }
 
 /// Kept for tests: interpret a content stream without resources.

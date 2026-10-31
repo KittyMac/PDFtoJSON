@@ -301,6 +301,49 @@ o = simple(b"BT /F1 12 Tf 72 700 Td (info strings) Tj ET")
 o[6] = b"<< /Title <FEFF0048006900200263> /Author (Ren\\351) /Subject (plain) >>"
 cases["info_strings"] = build(o, extra_trailer=b"/Info 6 0 R ")
 
+# ---------------------------------------------------------------- layout (reading order / blocks)
+def text_page(lines, size=8):
+    """lines: [(x, y, text, size)] -> a page drawing each at its own position."""
+    ops = []
+    for x, y, t, s in lines:
+        t = t.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        ops.append("BT /F1 %g Tf %g %g Td (%s) Tj ET" % (s, x, y, t))
+    return build(simple("\n".join(ops).encode("latin-1")))
+
+# header, a sidebar, two boxes side by side, and a table with right-aligned amounts
+L = [(417, 710, "Agreement # 123", 9),
+     (72, 637, "Customer", 12), (72, 618, "Name", 8), (72, 604, "JANE DOE", 8),
+     (72, 576, "Address", 8), (72, 562, "SPRINGFIELD", 8), (72, 548, "USA", 8),
+     (72, 516, "Vehicle", 12), (72, 498, "Plate: ABC123", 8), (72, 484, "Class: Compact", 8),
+     (72, 470, "Odometer: 1000", 8), (72, 456, "Fuel: 1/2", 8), (72, 442, "Color: Blue", 8),
+     (72, 428, "Doors: 4", 8), (72, 414, "Seats: 5", 8),
+     (236, 637, "Trip", 12),
+     (236, 618, "Pickup", 10), (236, 604, "Monday, May 6", 8), (236, 590, "MAIN ST", 8), (236, 576, "SPRINGFIELD", 8),
+     (391, 618, "Return", 10), (391, 604, "Friday, May 10", 8), (391, 590, "ELM ST", 8), (391, 576, "SHELBYVILLE", 8),
+     (236, 520, "Charges", 12),
+     (236, 500, "Rate", 8), (303, 500, "4 days", 8), (511, 500, "$247.88", 8),
+     (236, 478, "Mileage", 8), (303, 478, "Unlimited", 8), (510, 478, "Included", 8),
+     (236, 456, "Tax", 8), (303, 456, "Sales tax", 8), (515, 456, "$20.15", 8),
+     (236, 430, "Total", 10), (504, 430, "$272.03", 10)]
+cases["layout_sidebar_boxes"] = text_page(L)
+
+# a two-column article with baseline-aligned columns
+left = ["Left column line %d of the article" % i for i in range(1, 9)]
+right = ["Right column line %d of the article" % i for i in range(1, 9)]
+L = [(72, 720, "Article Title", 14)]
+for i in range(8):
+    L.append((72, 690 - i * 11, left[i], 9))
+    L.append((320, 690 - i * 11, right[i], 9))
+cases["layout_two_column"] = text_page(L)
+
+# a label : value form, read row by row
+L = []
+for i, (k, v) in enumerate([("Name", "Jane Doe"), ("Phone", "555-0100"), ("Email", "jane@example.com"),
+                            ("City", "Springfield"), ("Country", "USA")]):
+    L.append((72, 700 - i * 16, k, 9))
+    L.append((180, 700 - i * 16, v, 9))
+cases["layout_key_value"] = text_page(L)
+
 for k, v in cases.items():
     open(k + ".pdf", "wb").write(v)
 

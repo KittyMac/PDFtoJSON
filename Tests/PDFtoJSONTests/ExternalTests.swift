@@ -9,7 +9,7 @@ private func testdata(path: String) -> String {
 }
 
 private func text(_ root: JsonElement?, _ debug: Bool) -> Hitch {
-    // if debug { print(root!.toHitch()) }
+    if debug { print(root!.toHitch()) }
     guard let pages = root?[element: "pages"] else { return "" }
     return pages.toHitch()
 }
@@ -242,6 +242,13 @@ final class ExternalTests: XCTestCase {
         guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test37.pdf")) else { return }
         PDFtoJSON.parsed(hitch: pdf) { root in
             XCTAssertTrue(text(root, false).contains("RECHNUNG"))
+        }
+    }
+    
+    func testPDF38() {
+        guard let pdf = Hitch(contentsOfFile: testdata(path: "/Volumes/GoStorage/data/pdfs/test38.pdf")) else { return }
+        PDFtoJSON.parsed(hitch: pdf) { root in
+            XCTAssertTrue(text(root, true).contains("RECHNUNG"))
         }
     }
 }

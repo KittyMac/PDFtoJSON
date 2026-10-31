@@ -140,14 +140,17 @@ func buildPages(_ context: PDFContext) -> JsonElement {
     for page in collectPages(context) {
         let box = page.cropBox ?? page.mediaBox
         let content = pageContent(context, page)
-        let text = extractText(context,
-                               content: content.halfhitch(),
-                               resources: page.resources,
-                               matrix: pageMatrix(box: box, rotate: page.rotate))
+        let lines = extractLines(context,
+                                 content: content.halfhitch(),
+                                 resources: page.resources,
+                                 matrix: pageMatrix(box: box, rotate: page.rotate))
         let rotated = page.rotate == 90 || page.rotate == 270
 
         let pageOutput = JsonElement(unknown: [:])
-        pageOutput.set(key: "text", value: text)
+        pageOutput.set(key: "text", value: textElements(lines))
+        if context.options.textBlocks {
+            pageOutput.set(key: "blocks", value: blockElements(lines))
+        }
         pageOutput.set(key: "width", value: rotated ? box[3] - box[1] : box[2] - box[0])
         pageOutput.set(key: "height", value: rotated ? box[2] - box[0] : box[3] - box[1])
         output.append(value: pageOutput)
