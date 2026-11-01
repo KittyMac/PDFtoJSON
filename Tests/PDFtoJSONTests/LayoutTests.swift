@@ -49,8 +49,16 @@ final class LayoutTests: XCTestCase {
         XCTAssertTrue(result.contains("Charges|Rate|4 days|$247.88|Mileage|Unlimited|Included|Tax|Sales tax|$20.15|Total|$272.03"))
     }
 
+    func testStrayItemDoesNotPickTheColumnBoundary() {
+        // "8:04 AM" sits closer to the Return box than to its own date; the wider gap
+        // before it must not be taken for the boundary between the boxes
+        let result = blocks("layout_boxes_stray_time")
+        XCTAssertTrue(result.contains("Pickup|Friday, April 12|8:04 AM|MAIN STREET NORTH|SPRINGFIELD, GA 31313|USA"), "\(result)")
+        XCTAssertTrue(result.contains("Return|Monday, April 15|9:29 AM|ELM ST|SHELBYVILLE|USA"), "\(result)")
+    }
+
     func testBlocksContainEveryLineOnce() {
-        for name in ["layout_sidebar_boxes", "layout_two_column", "layout_key_value", "baseline", "objstm"] {
+        for name in ["layout_sidebar_boxes", "layout_two_column", "layout_key_value", "layout_boxes_stray_time", "baseline", "objstm"] {
             let fromBlocks = blocks(name).flatMap { $0.split(separator: "|").map(String.init) }.sorted()
             let fromText = corpusText(corpusParse(name)).split(whereSeparator: { $0 == "\n" || $0 == "\u{0C}" }).map(String.init).sorted()
             XCTAssertEqual(fromBlocks, fromText, name)

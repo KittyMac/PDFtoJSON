@@ -344,6 +344,15 @@ for i, (k, v) in enumerate([("Name", "Jane Doe"), ("Phone", "555-0100"), ("Email
     L.append((180, 700 - i * 16, v, 9))
 cases["layout_key_value"] = text_page(L)
 
+# side-by-side boxes where the first box's time sits close to the second box: the column
+# boundary is where the second box's lines share a left edge, not the widest gap
+L = [(236, 637, "Trip", 12),
+     (236, 618, "Pickup", 10), (247, 604, "Friday, April 12", 8), (354, 604, "8:04 AM", 8),
+     (236, 590, "MAIN STREET NORTH", 8), (236, 576, "SPRINGFIELD, GA 31313", 8), (236, 562, "USA", 8),
+     (391, 618, "Return", 10), (402, 604, "Monday, April 15", 8), (508, 604, "9:29 AM", 8),
+     (391, 590, "ELM ST", 8), (391, 576, "SHELBYVILLE", 8), (391, 562, "USA", 8)]
+cases["layout_boxes_stray_time"] = text_page(L)
+
 for k, v in cases.items():
     open(k + ".pdf", "wb").write(v)
 

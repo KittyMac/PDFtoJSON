@@ -114,6 +114,19 @@ private struct Gap {
     let second: [TextLine]
 }
 
+/// How many lines line up with the line nearest the gutter (left edges, centers or right
+/// edges): the alignment that makes the lines beyond a gutter a column.
+private func columnSupport(_ lines: [TextLine], size: Double) -> Int {
+    guard let anchor = lines.min(by: { $0.x < $1.x }) else { return 0 }
+    let tolerance = max(1.5, 0.2 * size)
+    let center = (anchor.x + anchor.x1) / 2
+    return lines.filter {
+        abs($0.x - anchor.x) <= tolerance ||
+        abs(($0.x + $0.x1) / 2 - center) <= tolerance ||
+        abs($0.x1 - anchor.x1) <= tolerance
+    }.count
+}
+
 /// Vertical gutters, widest first: (left lines, right lines).
 private func verticalGutters(_ lines: [TextLine], minimum: Double) -> [Gap] {
     let sorted = lines.sorted { $0.x < $1.x }
@@ -149,13 +162,18 @@ func readingOrderBlocks(_ lines: [TextLine], depth: Int = 0) -> [[TextLine]] {
     guard lines.count > 1, depth < 64 else { return lines.isEmpty ? [] : [lines] }
     let size = median(lines.map { $0.size })
 
-    // the widest gutter that separates two real columns
+    // the gutter that best separates two real columns: a column boundary is backed by
+    // lines aligned where the gutter ends (left edges, centers or right edges), not just
+    // by a gap that one stray item happens to sit after; width breaks ties
     var vertical: Gap? = nil
+    var bestSupport = 0
     for gap in verticalGutters(lines, minimum: max(5.0, 0.6 * size)) {
         guard gap.first.count >= 2, gap.second.count >= 2 else { continue }
+        let support = columnSupport(gap.second, size: size)
+        guard support >= 2, support > bestSupport else { continue }
         guard readAcross(gap, size: size) == false else { continue }
         vertical = gap
-        break
+        bestSupport = support
     }
 
     // the largest horizontal gap, if it is larger than this region's line spacing
